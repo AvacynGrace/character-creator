@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Lore Creator</title>
+<style>
+  :root {
+    --bg: #0e0e12;
+    --surface: #1a1a24;
+    --surface2: #22222f;
+    --border: #2e2e3e;
+    --accent: #2dd4bf;
+    --accent2: #67e8f9;
+    --text: #e2e0f0;
+    --muted: #8888aa;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
+
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  header h1 { font-size: 16px; font-weight: 700; color: var(--accent2); flex: 1; min-width: 180px; }
+  .btn {
+    padding: 7px 14px; border-radius: 6px; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 600; transition: opacity .2s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--accent); color: #0e0e12; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-green { background: #166534; color: var(--green); border: 1px solid #166534; }
+  .btn-red { background: #7f1d1d; color: var(--red); border: 1px solid #7f1d1d; }
+
+  .layout { display: flex; min-height: calc(100vh - 52px); }
+
+  nav {
+    width: 200px; flex-shrink: 0; background: var(--surface);
+    border-right: 1px solid var(--border); padding: 16px 0;
+    position: sticky; top: 52px; height: calc(100vh - 52px); overflow-y: auto;
+  }
+  nav a {
+    display: block; padding: 7px 18px; color: var(--muted); text-decoration: none;
+    font-size: 12px; font-weight: 500; border-left: 2px solid transparent; transition: all .15s;
+  }
+  nav a:hover, nav a.active { color: var(--accent2); border-left-color: var(--accent); background: rgba(45,212,191,.07); }
+  nav .nav-group { padding: 10px 18px 4px; font-size: 10px; font-weight: 700; color: var(--border); text-transform: uppercase; letter-spacing: .08em; }
+
+  main { flex: 1; padding: 24px; max-width: 860px; }
+
+  .section { margin-bottom: 36px; scroll-margin-top: 70px; }
+  .section-header {
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 18px;
+  }
+  .section-header h2 { font-size: 15px; font-weight: 700; color: var(--accent2); }
+  .section-icon { font-size: 16px; }
+
+  .field { margin-bottom: 16px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  label {
+    display: block; font-size: 12px; font-weight: 600; color: var(--muted);
+    margin-bottom: 5px; text-transform: uppercase; letter-spacing: .05em;
+  }
+  label span.req { color: var(--accent); margin-left: 3px; }
+  input[type="text"], select, textarea {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-family: inherit; font-size: 13px;
+    padding: 8px 10px; transition: border-color .15s; resize: vertical;
+  }
+  input[type="text"]:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  input[type="text"]::placeholder, textarea::placeholder { color: var(--border); }
+  select option { background: var(--surface2); }
+  textarea { min-height: 80px; line-height: 1.5; }
+  textarea.tall { min-height: 130px; }
+  textarea.xtall { min-height: 200px; }
+
+  .brainstorm-toggle {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--accent); cursor: pointer;
+    background: none; border: none; padding: 2px 0; margin-bottom: 6px; font-family: inherit;
+  }
+  .brainstorm-toggle:hover { color: var(--accent2); }
+  .brainstorm-panel {
+    display: none; background: rgba(45,212,191,.06); border: 1px solid rgba(45,212,191,.2);
+    border-radius: 6px; padding: 12px 14px; margin-bottom: 8px;
+  }
+  .brainstorm-panel.open { display: block; }
+  .brainstorm-panel p { font-size: 12px; color: var(--muted); line-height: 1.7; margin-bottom: 6px; }
+  .brainstorm-panel p:last-child { margin-bottom: 0; }
+  .brainstorm-panel strong { color: var(--accent2); }
+  .brainstorm-panel ul { padding-left: 16px; }
+  .brainstorm-panel li { font-size: 12px; color: var(--muted); line-height: 1.7; }
+
+  /* DYNAMIC ENTRIES */
+  .entry-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+  .entry-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .entry-card-title { font-size: 12px; font-weight: 700; color: var(--accent2); text-transform: uppercase; letter-spacing: .05em; }
+  .entry-remove { background: none; border: none; color: var(--red); cursor: pointer; font-size: 13px; }
+  .add-btn { background: var(--surface2); border: 1px dashed var(--border); border-radius: 6px; color: var(--muted); cursor: pointer; padding: 8px 14px; font-size: 12px; width: 100%; transition: all .15s; }
+  .add-btn:hover { border-color: var(--accent); color: var(--accent2); }
+
+  /* GLOSSARY */
+  .glossary-entry { display: grid; grid-template-columns: 1fr 2fr auto; gap: 8px; align-items: start; margin-bottom: 8px; }
+  .glossary-entry input { margin: 0; }
+
+  /* CHIPS */
+  .cmd-chip {
+    display: inline-block; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 3px 8px; font-size: 11px; color: var(--muted);
+    cursor: pointer; margin: 3px; transition: all .15s;
+  }
+  .cmd-chip:hover { border-color: var(--accent); color: var(--accent2); }
+
+  /* TAG INPUT */
+  .tag-input { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; min-height: 38px; cursor: text; }
+  .tag-input:focus-within { border-color: var(--accent); }
+  .tag { background: rgba(45,212,191,.15); border: 1px solid rgba(45,212,191,.3); border-radius: 4px; padding: 2px 6px; font-size: 12px; color: var(--accent2); display: flex; align-items: center; gap: 4px; }
+  .tag button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 11px; padding: 0; line-height: 1; }
+  .tag-input input { background: none; border: none; color: var(--text); font-size: 13px; outline: none; flex: 1; min-width: 80px; padding: 0; }
+
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 16px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none;
+  }
+  #toast.show { opacity: 1; }
+  #toast.success { border-color: var(--green); color: var(--green); }
+  #toast.error { border-color: var(--red); color: var(--red); }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; max-width: 560px; width: 90%; }
+  .modal h3 { font-size: 15px; color: var(--accent2); margin-bottom: 14px; }
+  .modal textarea { width: 100%; height: 200px; font-family: monospace; font-size: 11px; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
+
+  @media (max-width: 640px) {
+    nav { display: none; }
+    .field-row, .field-row-3 { grid-template-columns: 1fr; }
+    main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>World Lore Creator</h1>
+  <button class="btn btn-secondary" onclick="newWorld()">New</button>
+  <button class="btn btn-secondary" onclick="importJSON()">Import JSON</button>
+  <button class="btn btn-green" onclick="exportFull()">Export Full JSON</button>
+  <button class="btn btn-primary" onclick="exportLorebook()">Export Lorebook</button>
+  <button class="btn btn-red" onclick="clearForm()">Clear</button>
+</header>
+
+<div class="layout">
+<nav id="sidebar">
+  <div class="nav-group">Foundation</div>
+  <a href="#s-overview">World Overview</a>
+  <a href="#s-geography">Geography</a>
+  <a href="#s-history">History &amp; Timeline</a>
+  <div class="nav-group">Systems</div>
+  <a href="#s-magic">Magic / Power System</a>
+  <a href="#s-technology">Technology</a>
+  <a href="#s-economy">Economy &amp; Society</a>
+  <div class="nav-group">People</div>
+  <a href="#s-factions">Factions &amp; Politics</a>
+  <a href="#s-races">Races &amp; Species</a>
+  <a href="#s-religion">Religion &amp; Mythology</a>
+  <div class="nav-group">World</div>
+  <a href="#s-culture">Culture &amp; Daily Life</a>
+  <a href="#s-locations">Key Locations</a>
+  <a href="#s-figures">Notable Figures</a>
+  <a href="#s-conflicts">Conflicts &amp; Threats</a>
+  <a href="#s-secrets">Secrets &amp; Hidden Lore</a>
+  <div class="nav-group">Reference</div>
+  <a href="#s-glossary">Glossary</a>
+  <a href="#s-summary">World Summary</a>
+  <a href="#s-lorebook">Lorebook Instructions</a>
+</nav>
+
+<main>
+
+<!-- WORLD OVERVIEW -->
+<div class="section" id="s-overview">
+  <div class="section-header"><span class="section-icon">🌍</span><h2>World Overview</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-overview')">&#9881; Brainstorm: Foundation</button>
+  <div class="brainstorm-panel" id="bs-overview">
+    <p><strong>Start here — these answers shape everything else:</strong></p>
+    <ul>
+      <li>What is the single most unique thing about this world that no other world has?</li>
+      <li>What is the central tension or conflict that defines life in this world?</li>
+      <li>What tone does this world have — hopeful, grim, whimsical, brutal, mysterious?</li>
+      <li>Is magic/technology abundant or rare? Does it make life better or worse?</li>
+      <li>What do ordinary people fear most in this world?</li>
+      <li>What do ordinary people hope for most?</li>
+      <li>What's something that seems normal here that would horrify an outsider?</li>
+    </ul>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>World Name <span class="req">*</span></label>
+      <input type="text" id="world_name" placeholder="The name of this world or setting">
+    </div>
+    <div class="field">
+      <label>Genre / Setting Type</label>
+      <input type="text" id="genre" placeholder="High Fantasy, Sci-Fi, Urban Fantasy, Post-Apocalyptic, Steampunk...">
+    </div>
+  </div>
+  <div class="field-row">
+    <div class="field">
+      <label>Tone</label>
+      <input type="text" id="tone" placeholder="Dark, gritty, hopeful, whimsical, grim-dark, romantic...">
+    </div>
+    <div class="field">
+      <label>Maturity Rating</label>
+      <select id="maturity">
+        <option value="">Select...</option>
+        <option value="All Ages">All Ages</option>
+        <option value="Teen (13+)">Teen (13+)</option>
+        <option value="Mature (17+)">Mature (17+)</option>
+        <option value="Adult (18+)">Adult (18+)</option>
+      </select>
+    </div>
+  </div>
+  <div class="field">
+    <label>Core Themes</label>
+    <input type="text" id="themes" placeholder="Redemption, power and corruption, survival, found family, colonialism, love vs. duty...">
+  </div>
+  <div class="field">
+    <label>Elevator Pitch</label>
+    <textarea id="elevator_pitch" placeholder="Describe this world in 2-4 sentences. What makes it unique? What is the central conflict or premise?"></textarea>
+  </div>
+  <div class="field">
+    <label>Inspirations / Influences</label>
+    <input type="text" id="inspirations" placeholder="Books, games, shows, real-world history, mythology this world draws from...">
+  </div>
+  <div class="field">
+    <label>Scale</label>
+    <input type="text" id="scale" placeholder="A single city? A continent? A galaxy? Multiple dimensions?">
+  </div>
+</div>
+
+<!-- GEOGRAPHY -->
+<div class="section" id="s-geography">
+  <div class="section-header"><span class="section-icon">🗺️</span><h2>Geography</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-geo')">&#9881; Brainstorm: Geography</button>
+  <div class="brainstorm-panel" id="bs-geo">
+    <p><strong>Building the physical world:</strong></p>
+    <ul>
+      <li>How does the landscape shape the people who live there? (mountains = isolation, trade routes = culture mixing)</li>
+      <li>Are there places that are forbidden, cursed, or considered sacred?</li>
+      <li>What natural resources exist and who controls them?</li>
+      <li>Are there places that are physically dangerous just to be in?</li>
+      <li>How do people travel between regions — and who can afford to?</li>
+      <li>Has the geography changed due to history, magic, or disaster?</li>
+    </ul>
+  </div>
+
+  <div class="field">
+    <label>Overview / World Shape</label>
+    <textarea id="geo_overview" placeholder="General description of the world's physical layout. Continents, oceans, major geographic features..."></textarea>
+  </div>
+  <div class="field">
+    <label>Regions / Territories</label>
+    <textarea id="geo_regions" class="tall" placeholder="List major regions, kingdoms, or zones. For each: name, brief description, climate, who lives there, what it's known for."></textarea>
+  </div>
+  <div class="field">
+    <label>Climate & Environment</label>
+    <textarea id="geo_climate" placeholder="Climate zones, weather patterns, seasons (if applicable). Any unusual environmental phenomena?"></textarea>
+  </div>
+  <div class="field">
+    <label>Natural Resources</label>
+    <textarea id="geo_resources" placeholder="What materials, crops, minerals, or energy sources exist? What is rare vs. abundant?"></textarea>
+  </div>
+  <div class="field">
+    <label>Forbidden / Dangerous Places</label>
+    <textarea id="geo_forbidden" placeholder="Areas that are cursed, restricted, physically lethal, or considered sacred ground..."></textarea>
+  </div>
+  <div class="field">
+    <label>Travel & Transportation</label>
+    <input type="text" id="geo_travel" placeholder="How do people move between places? Roads, ships, portals, airships, teleportation?">
+  </div>
+</div>
+
+<!-- HISTORY & TIMELINE -->
+<div class="section" id="s-history">
+  <div class="section-header"><span class="section-icon">📜</span><h2>History &amp; Timeline</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-history')">&#9881; Brainstorm: History</button>
+  <div class="brainstorm-panel" id="bs-history">
+    <p><strong>Building a history that matters:</strong></p>
+    <ul>
+      <li>What event, if reversed, would make this world completely unrecognizable?</li>
+      <li>Whose version of history gets told? Whose is suppressed or forgotten?</li>
+      <li>What mistake from the past is the world still paying for today?</li>
+      <li>Is there a "before" — a golden age, a lost civilization, an older world?</li>
+      <li>What catastrophe shaped the current era? War, plague, magical disaster, god-death?</li>
+      <li>What do common people actually know about history vs. what's true?</li>
+    </ul>
+  </div>
+
+  <div class="field">
+    <label>Creation Myth / Origin Story</label>
+    <textarea id="hist_creation" class="tall" placeholder="How do people believe the world was created? What do different cultures believe? What is actually true (if different)?"></textarea>
+  </div>
+  <div class="field">
+    <label>Ages / Eras</label>
+    <textarea id="hist_eras" class="tall" placeholder="Major historical periods. For each: name, timeframe, defining characteristics, how it ended.&#10;&#10;E.g.: The Age of Gods — when divine beings walked the world openly. Ended with the Sundering."></textarea>
+  </div>
+  <div class="field">
+    <label>Major Historical Events</label>
+    <textarea id="hist_events" class="xtall" placeholder="Key events that shaped the current world. Wars, disasters, discoveries, betrayals, treaties. List chronologically or by importance."></textarea>
+  </div>
+  <div class="field">
+    <label>Current Era</label>
+    <textarea id="hist_current_era" placeholder="What age or period is the story set in? How long ago did the last major historical event occur?"></textarea>
+  </div>
+  <div class="field">
+    <label>Historical Mysteries</label>
+    <textarea id="hist_mysteries" placeholder="Events or periods that are poorly understood, disputed, or deliberately obscured. Lost civilizations, missing centuries, contradictory records..."></textarea>
+  </div>
+</div>
+
+<!-- MAGIC / POWER SYSTEM -->
+<div class="section" id="s-magic">
+  <div class="section-header"><span class="section-icon">✨</span><h2>Magic / Power System</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-magic')">&#9881; Brainstorm: Magic & Power</button>
+  <div class="brainstorm-panel" id="bs-magic">
+    <p><strong>Designing a compelling magic system:</strong></p>
+    <ul>
+      <li>What are the rules? A magic system with clear limits is more interesting than one with none.</li>
+      <li>What does it cost? (exhaustion, blood, years of life, sanity, emotion)</li>
+      <li>Is magic feared, worshipped, or treated as mundane?</li>
+      <li>Who has access — is it innate, learned, or granted by an outside force?</li>
+      <li>What happens when magic is misused or overused?</li>
+      <li>Is there a "dark" side — forbidden magic, corruption, things that shouldn't be done?</li>
+      <li>How does magic interact with technology or religion?</li>
+    </ul>
+  </div>
+
+  <div class="field">
+    <label>Exists?</label>
+    <select id="magic_exists">
+      <option value="Yes">Yes — magic exists</option>
+      <option value="No">No — non-magical world</option>
+      <option value="Rare">Rare / hidden / debated</option>
+      <option value="Lost">Lost / ancient / forgotten</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>How It Works</label>
+    <textarea id="magic_how" class="tall" placeholder="The fundamental mechanics. Where does magical power come from? How is it accessed or channeled?"></textarea>
+  </div>
+  <div class="field">
+    <label>Types / Schools / Disciplines</label>
+    <textarea id="magic_types" class="tall" placeholder="Different branches, schools, or types of magic. What can each do? Are some more powerful or forbidden than others?"></textarea>
+  </div>
+  <div class="field">
+    <label>Costs &amp; Limits</label>
+    <textarea id="magic_costs" placeholder="What does using magic cost physically, mentally, or spiritually? What are its hard limits?"></textarea>
+  </div>
+  <div class="field">
+    <label>Who Can Use It</label>
+    <textarea id="magic_access" placeholder="Is it innate (born with it), learned, inherited, granted, or tied to a source (artifacts, gods, nature)?"></textarea>
+  </div>
+  <div class="field">
+    <label>Forbidden / Dangerous Magic</label>
+    <textarea id="magic_forbidden" placeholder="What magic is outlawed, taboo, or corrupting? Why? What happens to those who use it?"></textarea>
+  </div>
+  <div class="field">
+    <label>Social Perception</label>
+    <input type="text" id="magic_perception" placeholder="Is magic feared, revered, taxed, hidden, normalized? How do non-magic users view it?">
+  </div>
+</div>
+
+<!-- TECHNOLOGY -->
+<div class="section" id="s-technology">
+  <div class="section-header"><span class="section-icon">⚙️</span><h2>Technology</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-tech')">&#9881; Brainstorm: Technology</button>
+  <div class="brainstorm-panel" id="bs-tech">
+    <ul>
+      <li>What is the general tech level? (stone age, medieval, industrial, modern, post-singularity)</li>
+      <li>Is technology evenly distributed or does only one group/region have advanced tech?</li>
+      <li>Does magic replace technology, coexist with it, or conflict with it?</li>
+      <li>What's the most transformative technology in this world?</li>
+      <li>Is there tech that's been lost or destroyed? Why?</li>
+      <li>Who controls the most powerful technology — and who is denied it?</li>
+    </ul>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Tech Level</label>
+      <input type="text" id="tech_level" placeholder="Stone Age / Medieval / Industrial / Modern / Futuristic / Post-Apocalyptic...">
+    </div>
+    <div class="field">
+      <label>Magic vs. Technology</label>
+      <input type="text" id="tech_vs_magic" placeholder="Do they coexist, conflict, replace each other, or merge?">
+    </div>
+  </div>
+  <div class="field">
+    <label>Notable Technologies</label>
+    <textarea id="tech_notable" placeholder="Key inventions, devices, or systems that define this world. How do they work and who has access?"></textarea>
+  </div>
+  <div class="field">
+    <label>Lost or Forbidden Tech</label>
+    <textarea id="tech_lost" placeholder="Technologies that were destroyed, outlawed, or forgotten. Why? Could they be rediscovered?"></textarea>
+  </div>
+  <div class="field">
+    <label>Communication & Information</label>
+    <input type="text" id="tech_comms" placeholder="How do people communicate over distances? How is information stored and spread?">
+  </div>
+</div>
+
+<!-- ECONOMY & SOCIETY -->
+<div class="section" id="s-economy">
+  <div class="section-header"><span class="section-icon">⚖️</span><h2>Economy &amp; Society</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-econ')">&#9881; Brainstorm: Economy & Society</button>
+  <div class="brainstorm-panel" id="bs-econ">
+    <ul>
+      <li>What does wealth look like here — gold, land, magic, information, loyalty?</li>
+      <li>How easy is it for someone to move between social classes?</li>
+      <li>What rights do different groups have — based on species, gender, magic ability, birth?</li>
+      <li>What is the justice system? Who enforces laws, and are they just?</li>
+      <li>What does the average person's day look like?</li>
+      <li>What do people trade internationally, and who profits most?</li>
+    </ul>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Currency / Trade</label>
+      <input type="text" id="econ_currency" placeholder="What is used as currency? How is trade conducted?">
+    </div>
+    <div class="field">
+      <label>Economic System</label>
+      <input type="text" id="econ_system" placeholder="Feudalism, capitalism, barter, magic-based, resource-controlled...">
+    </div>
+  </div>
+  <div class="field">
+    <label>Class Structure</label>
+    <textarea id="econ_class" placeholder="Social strata from top to bottom. What separates classes — birth, wealth, magic, species, merit?"></textarea>
+  </div>
+  <div class="field">
+    <label>Laws &amp; Justice</label>
+    <textarea id="econ_laws" placeholder="How are laws created and enforced? Who judges crimes? What are the most severe offenses and their punishments?"></textarea>
+  </div>
+  <div class="field">
+    <label>Rights &amp; Inequalities</label>
+    <textarea id="econ_rights" placeholder="Who has full rights? Who is denied them? Based on what — species, gender, magic, birth, religion?"></textarea>
+  </div>
+  <div class="field">
+    <label>Common Person's Life</label>
+    <textarea id="econ_common" placeholder="What does everyday life look like for an ordinary person? Work, food, shelter, safety, leisure..."></textarea>
+  </div>
+</div>
+
+<!-- FACTIONS & POLITICS -->
+<div class="section" id="s-factions">
+  <div class="section-header"><span class="section-icon">🏛️</span><h2>Factions &amp; Politics</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-factions')">&#9881; Brainstorm: Factions</button>
+  <div class="brainstorm-panel" id="bs-factions">
+    <ul>
+      <li>Who holds real power vs. ceremonial power?</li>
+      <li>What does each faction actually want, and what will they sacrifice for it?</li>
+      <li>Which factions appear to be allies but secretly hate each other?</li>
+      <li>Is there a faction that everyone underestimates?</li>
+      <li>Who are the kingmakers — the ones who don't rule but decide who does?</li>
+      <li>What would cause two opposing factions to briefly unite?</li>
+    </ul>
+  </div>
+
+  <div class="field">
+    <label>Political Overview</label>
+    <textarea id="factions_overview" placeholder="The broad political landscape. Who rules, how is power structured, what are the major tensions?"></textarea>
+  </div>
+
+  <div id="factions-container"></div>
+  <button class="add-btn" onclick="addFaction()">+ Add Faction / Organization</button>
+</div>
+
+<!-- RACES & SPECIES -->
+<div class="section" id="s-races">
+  <div class="section-header"><span class="section-icon">🧬</span><h2>Races &amp; Species</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-races')">&#9881; Brainstorm: Races & Species</button>
+  <div class="brainstorm-panel" id="bs-races">
+    <ul>
+      <li>What is the history between different races — ancient alliances, old wars, cultural theft?</li>
+      <li>Are there racial stereotypes in this world, and are they accurate or propaganda?</li>
+      <li>What does each race value most? What do they fear?</li>
+      <li>Are there mixed-race individuals and how are they treated?</li>
+      <li>Which species is most dominant politically, and is that recent or ancient?</li>
+      <li>Are there species considered "lesser" or "other" by the dominant culture?</li>
+    </ul>
+  </div>
+
+  <div id="races-container"></div>
+  <button class="add-btn" onclick="addRace()">+ Add Race / Species</button>
+</div>
+
+<!-- RELIGION & MYTHOLOGY -->
+<div class="section" id="s-religion">
+  <div class="section-header"><span class="section-icon">🔱</span><h2>Religion &amp; Mythology</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-religion')">&#9881; Brainstorm: Religion</button>
+  <div class="brainstorm-panel" id="bs-religion">
+    <ul>
+      <li>Are the gods real and provable, or a matter of faith?</li>
+      <li>Do gods intervene directly, or work through chosen followers?</li>
+      <li>What happens to people when they die? Is there an afterlife, reincarnation, or oblivion?</li>
+      <li>Is there religious conflict — between faiths, or between religion and state?</li>
+      <li>What is considered blasphemy? What's sacred that others would call mundane?</li>
+      <li>Are there gods who were killed, forgotten, or turned evil?</li>
+    </ul>
+  </div>
+
+  <div class="field">
+    <label>Religious Overview</label>
+    <textarea id="religion_overview" placeholder="Are gods real? How many religions exist? Do they conflict? Is there a dominant faith?"></textarea>
+  </div>
+  <div class="field">
+    <label>Afterlife</label>
+    <textarea id="religion_afterlife" placeholder="What happens after death in this world? Different cultures may believe different things — what is actually true?"></textarea>
+  </div>
+
+  <div id="religions-container"></div>
+  <button class="add-btn" onclick="addReligion()">+ Add Religion / Deity / Pantheon</button>
+</div>
+
+<!-- CULTURE & DAILY LIFE -->
+<div class="section" id="s-culture">
+  <div class="section-header"><span class="section-icon">🎭</span><h2>Culture &amp; Daily Life</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-culture')">&#9881; Brainstorm: Culture</button>
+  <div class="brainstorm-panel" id="bs-culture">
+    <ul>
+      <li>What art form is most valued in this world — music, storytelling, visual art, architecture?</li>
+      <li>What do people do for fun? What brings communities together?</li>
+      <li>What is considered the height of rudeness or the greatest honor?</li>
+      <li>How is death mourned or celebrated?</li>
+      <li>What foods are common, and which are luxury items only the wealthy enjoy?</li>
+      <li>Are there cultural taboos that outsiders would find baffling?</li>
+      <li>How does language differ between regions, classes, or species?</li>
+    </ul>
+  </div>
+
+  <div class="field">
+    <label>Language(s)</label>
+    <textarea id="culture_language" placeholder="What languages are spoken? Is there a common tongue? Any notable dialects, dead languages, or magical languages?"></textarea>
+  </div>
+  <div class="field">
+    <label>Arts &amp; Entertainment</label>
+    <textarea id="culture_arts" placeholder="Music, storytelling, visual arts, theater, sports, games. What forms of entertainment are popular?"></textarea>
+  </div>
+  <div class="field">
+    <label>Food &amp; Drink</label>
+    <textarea id="culture_food" placeholder="Staple foods, delicacies, what's considered luxury vs. common. Culturally significant dishes. Notable drinks or substances."></textarea>
+  </div>
+  <div class="field">
+    <label>Celebrations &amp; Festivals</label>
+    <textarea id="culture_festivals" placeholder="Major holidays, rituals, coming-of-age ceremonies, harvest festivals, remembrance days..."></textarea>
+  </div>
+  <div class="field">
+    <label>Fashion &amp; Aesthetics</label>
+    <textarea id="culture_fashion" placeholder="What do people wear? Does clothing indicate status, faction, species, or magical ability?"></textarea>
+  </div>
+  <div class="field">
+    <label>Taboos &amp; Social Norms</label>
+    <textarea id="culture_taboos" placeholder="What behaviors are considered deeply offensive or forbidden? What social rules govern daily interaction?"></textarea>
+  </div>
+  <div class="field">
+    <label>Family &amp; Relationships</label>
+    <textarea id="culture_family" placeholder="Family structures, marriage customs, gender roles (or lack thereof), how children are raised, treatment of elders..."></textarea>
+  </div>
+</div>
+
+<!-- KEY LOCATIONS -->
+<div class="section" id="s-locations">
+  <div class="section-header"><span class="section-icon">📍</span><h2>Key Locations</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-locations')">&#9881; Brainstorm: Locations</button>
+  <div class="brainstorm-panel" id="bs-locations">
+    <ul>
+      <li>What does this place smell like, sound like, feel like?</li>
+      <li>Who lives here and who is kept out?</li>
+      <li>What has happened here that left a mark — physically, spiritually, historically?</li>
+      <li>Is this place what it appears to be, or is there a hidden layer?</li>
+      <li>What would someone never expect about this place?</li>
+    </ul>
+  </div>
+
+  <div id="locations-container"></div>
+  <button class="add-btn" onclick="addLocation()">+ Add Location</button>
+</div>
+
+<!-- NOTABLE FIGURES -->
+<div class="section" id="s-figures">
+  <div class="section-header"><span class="section-icon">👑</span><h2>Notable Figures</h2></div>
+  <p style="color:var(--muted);font-size:12px;margin-bottom:14px;">World-level important characters — rulers, legends, villains, historical figures. For chatbot characters, use the Character Creator.</p>
+
+  <div id="figures-container"></div>
+  <button class="add-btn" onclick="addFigure()">+ Add Notable Figure</button>
+</div>
+
+<!-- CONFLICTS & THREATS -->
+<div class="section" id="s-conflicts">
+  <div class="section-header"><span class="section-icon">⚔️</span><h2>Conflicts &amp; Threats</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-conflicts')">&#9881; Brainstorm: Conflict</button>
+  <div class="brainstorm-panel" id="bs-conflicts">
+    <ul>
+      <li>What's the conflict everyone knows about vs. the one no one talks about?</li>
+      <li>Who benefits from the current conflict continuing — who has a stake in it never ending?</li>
+      <li>Is the main threat external (invasion, monster, plague) or internal (corruption, civil war)?</li>
+      <li>What would have to happen for this conflict to truly end?</li>
+      <li>What does the antagonist believe they're doing right?</li>
+      <li>Is there a threat that no one has recognized yet?</li>
+    </ul>
+  </div>
+
+  <div class="field">
+    <label>Current Major Conflicts</label>
+    <textarea id="conflict_current" class="tall" placeholder="Wars, political tensions, cold wars, ongoing disasters. Who is involved? What's at stake?"></textarea>
+  </div>
+  <div class="field">
+    <label>Primary Antagonist Force</label>
+    <textarea id="conflict_antagonist" placeholder="The main villain, threat, or opposing force. What do they want? What are they willing to do?"></textarea>
+  </div>
+  <div class="field">
+    <label>Looming Threats</label>
+    <textarea id="conflict_looming" placeholder="Dangers on the horizon that haven't fully arrived yet. Prophecies, building tensions, slow disasters..."></textarea>
+  </div>
+  <div class="field">
+    <label>Hidden / Unrecognized Threats</label>
+    <textarea id="conflict_hidden" placeholder="Threats that most people don't know about or refuse to acknowledge..."></textarea>
+  </div>
+</div>
+
+<!-- SECRETS & HIDDEN LORE -->
+<div class="section" id="s-secrets">
+  <div class="section-header"><span class="section-icon">🔐</span><h2>Secrets &amp; Hidden Lore</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-secrets')">&#9881; Brainstorm: Hidden Truths</button>
+  <div class="brainstorm-panel" id="bs-secrets">
+    <ul>
+      <li>What truth would shatter the world's foundation if revealed?</li>
+      <li>Who knows the real history — and what are they doing with that knowledge?</li>
+      <li>Is there something that appears benevolent but is actually sinister?</li>
+      <li>What has been deliberately erased from history, and by whom?</li>
+      <li>What does the protagonist think is true that isn't?</li>
+    </ul>
+  </div>
+
+  <div class="field">
+    <label>World Secrets</label>
+    <textarea id="secrets_world" class="tall" placeholder="Hidden truths about the world itself — its real origins, true nature of magic, what gods actually are..."></textarea>
+  </div>
+  <div class="field">
+    <label>Suppressed History</label>
+    <textarea id="secrets_history" placeholder="What has been deliberately erased, rewritten, or hidden from the historical record? By whom, and why?"></textarea>
+  </div>
+  <div class="field">
+    <label>Hidden Powers / Conspiracies</label>
+    <textarea id="secrets_powers" placeholder="Secret organizations, shadow governments, ancient orders, hidden bloodlines operating behind the scenes..."></textarea>
+  </div>
+  <div class="field">
+    <label>Prophecies</label>
+    <textarea id="secrets_prophecies" placeholder="Any prophecies, visions, or destinies? Who knows about them? Are they being fulfilled, manipulated, or fought against?"></textarea>
+  </div>
+</div>
+
+<!-- GLOSSARY -->
+<div class="section" id="s-glossary">
+  <div class="section-header"><span class="section-icon">📚</span><h2>Glossary</h2></div>
+  <p style="color:var(--muted);font-size:12px;margin-bottom:14px;">Define unique terms, titles, slang, place names, and concepts specific to this world.</p>
+
+  <div id="glossary-container"></div>
+  <button class="add-btn" onclick="addGlossaryEntry()">+ Add Term</button>
+</div>
+
+<!-- WORLD SUMMARY -->
+<div class="section" id="s-summary">
+  <div class="section-header"><span class="section-icon">📋</span><h2>World Summary</h2></div>
+  <p style="color:var(--muted);font-size:12px;margin-bottom:10px;">A condensed overview for quick reference or token-limited scenarios.</p>
+
+  <button class="btn btn-secondary" onclick="generateSummary()" style="margin-bottom:10px;">Auto-Generate from Fields</button>
+  <div class="field">
+    <textarea id="world_summary" class="xtall" placeholder="Write or auto-generate a condensed world summary. Typically covers: setting, tone, core concept, major factions, magic/tech, and current situation."></textarea>
+  </div>
+</div>
+
+<!-- LOREBOOK INSTRUCTIONS -->
+<div class="section" id="s-lorebook">
+  <div class="section-header"><span class="section-icon">⚙️</span><h2>Lorebook / System Instructions</h2></div>
+  <p style="color:var(--muted);font-size:12px;margin-bottom:10px;">Instructions that govern how the AI uses and maintains this world's lore in roleplay.</p>
+
+  <div style="margin-bottom:10px;">
+    <p style="color:var(--muted);font-size:11px;margin-bottom:6px;">Quick-insert templates (click to append):</p>
+    <span class="cmd-chip" onclick="appendCmd('Always maintain internal consistency with the world lore. Do not contradict established facts.')">Lore consistency</span>
+    <span class="cmd-chip" onclick="appendCmd('When describing the world, use sensory details — sights, smells, sounds, textures — to bring it to life.')">Sensory detail</span>
+    <span class="cmd-chip" onclick="appendCmd('NPCs and the world should react realistically to {{user}}\'s actions and choices. Consequences are real.')">Living world</span>
+    <span class="cmd-chip" onclick="appendCmd('Introduce world lore organically through character interactions and events, not info-dumps.')">Show don\'t tell</span>
+    <span class="cmd-chip" onclick="appendCmd('Keep secrets and hidden lore hidden unless {{user}} actively uncovers them through roleplay.')">Protect secrets</span>
+    <span class="cmd-chip" onclick="appendCmd('The world existed before {{user}} arrived. Reference ongoing events, weather, politics, and daily life.')">World exists independently</span>
+    <span class="cmd-chip" onclick="appendCmd('Maintain consistent accents, vocabulary, and speech patterns for different species and regions.')">Cultural voice</span>
+    <span class="cmd-chip" onclick="appendCmd('This world operates on its own moral framework. Do not impose real-world ethics unless they match the setting.')">In-world morality</span>
+  </div>
+
+  <div class="field">
+    <textarea id="lorebook_instructions" class="xtall" placeholder="Enter lorebook and system instructions here. These govern how the AI maintains and portrays the world during roleplay.&#10;&#10;Example:&#10;Maintain internal consistency with all established lore. Introduce world details organically. NPCs react realistically to player choices. Keep world secrets hidden until discovered."></textarea>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <h3>Import JSON</h3>
+    <textarea id="importText" placeholder="Paste your world JSON here..."></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('importModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doImport()">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <h3 id="exportModalTitle">Export</h3>
+    <textarea id="exportText" readonly></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('exportModal')">Close</button>
+      <button class="btn btn-primary" onclick="copyExport()">Copy to Clipboard</button>
+      <button class="btn btn-green" onclick="downloadExport()">Download File</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── BRAINSTORM ──
+function toggleBrainstorm(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+// ── DYNAMIC ENTRIES ──
+let counters = { faction: 0, race: 0, religion: 0, location: 0, figure: 0, glossary: 0 };
+
+function makeEntry(type, label, fields) {
+  counters[type]++;
+  const id = `${type}-${counters[type]}`;
+  const container = document.getElementById(`${type}s-container`);
+  const div = document.createElement('div');
+  div.className = 'entry-card';
+  div.id = id;
+  let html = `<div class="entry-card-header"><span class="entry-card-title">${label} ${counters[type]}</span><button class="entry-remove" onclick="removeEntry('${id}')">✕ Remove</button></div>`;
+  fields.forEach(f => {
+    html += `<div class="field"><label>${f.label}</label>`;
+    if (f.type === 'textarea') {
+      html += `<textarea class="${f.cls||''}" placeholder="${f.placeholder}" data-key="${f.key}"></textarea>`;
+    } else {
+      html += `<input type="text" placeholder="${f.placeholder}" data-key="${f.key}">`;
+    }
+    html += `</div>`;
+  });
+  div.innerHTML = html;
+  container.appendChild(div);
+}
+
+function removeEntry(id) { document.getElementById(id)?.remove(); }
+
+function addFaction() {
+  makeEntry('faction', 'Faction', [
+    { label: 'Name', type: 'text', placeholder: 'Faction or organization name', key: 'name' },
+    { label: 'Type', type: 'text', placeholder: 'Government, guild, military, cult, criminal, resistance...', key: 'type' },
+    { label: 'Description', type: 'textarea', placeholder: 'What are they? What do they control or represent?', key: 'description' },
+    { label: 'Goals', type: 'textarea', placeholder: 'What do they want — publicly, and secretly?', key: 'goals' },
+    { label: 'Methods', type: 'text', placeholder: 'How do they pursue their goals? (political, violent, religious, economic)', key: 'methods' },
+    { label: 'Key Figures', type: 'text', placeholder: 'Leaders, figureheads, important members', key: 'key_figures' },
+    { label: 'Allies & Enemies', type: 'text', placeholder: 'Who do they work with / against?', key: 'relationships' },
+    { label: 'Strengths & Weaknesses', type: 'textarea', placeholder: 'What makes them powerful? What could bring them down?', key: 'strengths_weaknesses' },
+  ]);
+}
+
+function addRace() {
+  makeEntry('race', 'Race / Species', [
+    { label: 'Name', type: 'text', placeholder: 'Name of the race or species', key: 'name' },
+    { label: 'Overview', type: 'textarea', placeholder: 'General description. Origins, what makes them distinct from humans?', key: 'overview' },
+    { label: 'Physical Traits', type: 'textarea', placeholder: 'Appearance, lifespan, physical abilities, senses, biology...', key: 'physical' },
+    { label: 'Culture & Values', type: 'textarea', placeholder: 'What do they value? How do they organize society? Traditions, customs...', key: 'culture' },
+    { label: 'Magic / Abilities', type: 'text', placeholder: 'Innate supernatural abilities or limitations', key: 'abilities' },
+    { label: 'Relationship with Others', type: 'textarea', placeholder: 'How do other races view them? Historical tensions or alliances?', key: 'relations' },
+    { label: 'Notable Stereotypes', type: 'text', placeholder: 'What does the world believe about them — true or false?', key: 'stereotypes' },
+  ]);
+}
+
+function addReligion() {
+  makeEntry('religion', 'Religion / Deity', [
+    { label: 'Name', type: 'text', placeholder: 'Name of religion, deity, or pantheon', key: 'name' },
+    { label: 'Type', type: 'text', placeholder: 'Monotheistic, polytheistic, animistic, cult, nature worship...', key: 'type' },
+    { label: 'Core Beliefs', type: 'textarea', placeholder: 'What do followers believe? Creation, afterlife, purpose of existence...', key: 'beliefs' },
+    { label: 'Deity / Deities', type: 'textarea', placeholder: 'Who or what is worshipped? Their domain, personality, relationship with mortals...', key: 'deities' },
+    { label: 'Practices & Rituals', type: 'textarea', placeholder: 'How is faith practiced? Prayers, sacrifices, pilgrimages, ceremonies...', key: 'practices' },
+    { label: 'Sacred & Forbidden', type: 'text', placeholder: 'What is holy? What is blasphemous?', key: 'sacred' },
+    { label: 'Political Influence', type: 'text', placeholder: 'How much power does this religion have in society?', key: 'influence' },
+  ]);
+}
+
+function addLocation() {
+  makeEntry('location', 'Location', [
+    { label: 'Name', type: 'text', placeholder: 'Name of the place', key: 'name' },
+    { label: 'Type', type: 'text', placeholder: 'City, ruin, dungeon, forest, fortress, temple, wasteland...', key: 'type' },
+    { label: 'Location / Region', type: 'text', placeholder: 'Where is it in the world?', key: 'region' },
+    { label: 'Description', type: 'textarea', placeholder: 'What does it look like, smell like, feel like? What stands out?', key: 'description', cls: 'tall' },
+    { label: 'Who Lives / Controls It', type: 'text', placeholder: 'Inhabitants, rulers, factions with claim over it', key: 'inhabitants' },
+    { label: 'History', type: 'textarea', placeholder: 'What has happened here? What events shaped this place?', key: 'history' },
+    { label: 'Secrets / Hidden Details', type: 'textarea', placeholder: 'What is hidden here that most people don\'t know?', key: 'secrets' },
+    { label: 'Significance', type: 'text', placeholder: 'Why does this place matter to the story or world?', key: 'significance' },
+  ]);
+}
+
+function addFigure() {
+  makeEntry('figure', 'Notable Figure', [
+    { label: 'Name', type: 'text', placeholder: 'Full name and title', key: 'name' },
+    { label: 'Role', type: 'text', placeholder: 'Ruler, legend, villain, prophet, hero, monster...', key: 'role' },
+    { label: 'Status', type: 'text', placeholder: 'Living / Dead / Unknown / Mythological', key: 'status' },
+    { label: 'Description', type: 'textarea', placeholder: 'Who are they? What are they known for? Brief physical and personality description.', key: 'description' },
+    { label: 'Goals & Motivations', type: 'text', placeholder: 'What do they want? What drives them?', key: 'goals' },
+    { label: 'Faction / Allegiance', type: 'text', placeholder: 'Who do they serve or lead?', key: 'faction' },
+    { label: 'Impact on the World', type: 'textarea', placeholder: 'What have they done or what are they doing that affects the world?', key: 'impact' },
+  ]);
+}
+
+function addGlossaryEntry() {
+  counters.glossary++;
+  const id = `glossary-${counters.glossary}`;
+  const container = document.getElementById('glossary-container');
+  const div = document.createElement('div');
+  div.className = 'glossary-entry';
+  div.id = id;
+  div.innerHTML = `
+    <input type="text" placeholder="Term" data-key="term">
+    <input type="text" placeholder="Definition / meaning in this world" data-key="definition">
+    <button class="entry-remove" onclick="removeEntry('${id}')">✕</button>
+  `;
+  container.appendChild(div);
+}
+
+// ── COLLECT ENTRIES ──
+function collectEntries(containerId, type) {
+  const entries = [];
+  document.querySelectorAll(`#${containerId} .entry-card`).forEach(card => {
+    const entry = {};
+    card.querySelectorAll('[data-key]').forEach(el => { entry[el.dataset.key] = el.value.trim(); });
+    if (Object.values(entry).some(v => v)) entries.push(entry);
+  });
+  return entries;
+}
+
+function collectGlossary() {
+  const entries = [];
+  document.querySelectorAll('#glossary-container .glossary-entry').forEach(row => {
+    const term = row.querySelector('[data-key="term"]')?.value.trim();
+    const def = row.querySelector('[data-key="definition"]')?.value.trim();
+    if (term || def) entries.push({ term, definition: def });
+  });
+  return entries;
+}
+
+// ── COLLECT FORM ──
+function collectForm() {
+  const g = id => document.getElementById(id)?.value.trim() || '';
+  return {
+    world_overview: {
+      world_name: g('world_name'),
+      genre: g('genre'),
+      tone: g('tone'),
+      maturity_rating: g('maturity'),
+      core_themes: g('themes'),
+      elevator_pitch: g('elevator_pitch'),
+      inspirations: g('inspirations'),
+      scale: g('scale'),
+    },
+    geography: {
+      overview: g('geo_overview'),
+      regions_territories: g('geo_regions'),
+      climate_environment: g('geo_climate'),
+      natural_resources: g('geo_resources'),
+      forbidden_dangerous_places: g('geo_forbidden'),
+      travel_transportation: g('geo_travel'),
+    },
+    history_timeline: {
+      creation_myth: g('hist_creation'),
+      ages_eras: g('hist_eras'),
+      major_events: g('hist_events'),
+      current_era: g('hist_current_era'),
+      historical_mysteries: g('hist_mysteries'),
+    },
+    magic_power_system: {
+      exists: g('magic_exists'),
+      how_it_works: g('magic_how'),
+      types_schools: g('magic_types'),
+      costs_limits: g('magic_costs'),
+      who_can_use: g('magic_access'),
+      forbidden_magic: g('magic_forbidden'),
+      social_perception: g('magic_perception'),
+    },
+    technology: {
+      tech_level: g('tech_level'),
+      magic_vs_technology: g('tech_vs_magic'),
+      notable_technologies: g('tech_notable'),
+      lost_forbidden_tech: g('tech_lost'),
+      communication_information: g('tech_comms'),
+    },
+    economy_society: {
+      currency_trade: g('econ_currency'),
+      economic_system: g('econ_system'),
+      class_structure: g('econ_class'),
+      laws_justice: g('econ_laws'),
+      rights_inequalities: g('econ_rights'),
+      common_persons_life: g('econ_common'),
+    },
+    factions_politics: {
+      overview: g('factions_overview'),
+      factions: collectEntries('factions-container', 'faction'),
+    },
+    races_species: {
+      races: collectEntries('races-container', 'race'),
+    },
+    religion_mythology: {
+      overview: g('religion_overview'),
+      afterlife: g('religion_afterlife'),
+      religions: collectEntries('religions-container', 'religion'),
+    },
+    culture_daily_life: {
+      languages: g('culture_language'),
+      arts_entertainment: g('culture_arts'),
+      food_drink: g('culture_food'),
+      celebrations_festivals: g('culture_festivals'),
+      fashion_aesthetics: g('culture_fashion'),
+      taboos_social_norms: g('culture_taboos'),
+      family_relationships: g('culture_family'),
+    },
+    key_locations: collectEntries('locations-container', 'location'),
+    notable_figures: collectEntries('figures-container', 'figure'),
+    conflicts_threats: {
+      current_conflicts: g('conflict_current'),
+      primary_antagonist: g('conflict_antagonist'),
+      looming_threats: g('conflict_looming'),
+      hidden_threats: g('conflict_hidden'),
+    },
+    secrets_hidden_lore: {
+      world_secrets: g('secrets_world'),
+      suppressed_history: g('secrets_history'),
+      hidden_powers_conspiracies: g('secrets_powers'),
+      prophecies: g('secrets_prophecies'),
+    },
+    glossary: collectGlossary(),
+    world_summary: g('world_summary'),
+    lorebook_instructions: g('lorebook_instructions'),
+  };
+}
+
+// ── POPULATE FORM ──
+function populateForm(data) {
+  const s = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val || ''; };
+
+  const wo = data.world_overview || {};
+  s('world_name', wo.world_name); s('genre', wo.genre); s('tone', wo.tone);
+  s('maturity', wo.maturity_rating); s('themes', wo.core_themes);
+  s('elevator_pitch', wo.elevator_pitch); s('inspirations', wo.inspirations); s('scale', wo.scale);
+
+  const geo = data.geography || {};
+  s('geo_overview', geo.overview); s('geo_regions', geo.regions_territories);
+  s('geo_climate', geo.climate_environment); s('geo_resources', geo.natural_resources);
+  s('geo_forbidden', geo.forbidden_dangerous_places); s('geo_travel', geo.travel_transportation);
+
+  const h = data.history_timeline || {};
+  s('hist_creation', h.creation_myth); s('hist_eras', h.ages_eras);
+  s('hist_events', h.major_events); s('hist_current_era', h.current_era);
+  s('hist_mysteries', h.historical_mysteries);
+
+  const m = data.magic_power_system || {};
+  s('magic_exists', m.exists); s('magic_how', m.how_it_works);
+  s('magic_types', m.types_schools); s('magic_costs', m.costs_limits);
+  s('magic_access', m.who_can_use); s('magic_forbidden', m.forbidden_magic);
+  s('magic_perception', m.social_perception);
+
+  const t = data.technology || {};
+  s('tech_level', t.tech_level); s('tech_vs_magic', t.magic_vs_technology);
+  s('tech_notable', t.notable_technologies); s('tech_lost', t.lost_forbidden_tech);
+  s('tech_comms', t.communication_information);
+
+  const e = data.economy_society || {};
+  s('econ_currency', e.currency_trade); s('econ_system', e.economic_system);
+  s('econ_class', e.class_structure); s('econ_laws', e.laws_justice);
+  s('econ_rights', e.rights_inequalities); s('econ_common', e.common_persons_life);
+
+  const fp = data.factions_politics || {};
+  s('factions_overview', fp.overview);
+
+  const rel = data.religion_mythology || {};
+  s('religion_overview', rel.overview); s('religion_afterlife', rel.afterlife);
+
+  const c = data.culture_daily_life || {};
+  s('culture_language', c.languages); s('culture_arts', c.arts_entertainment);
+  s('culture_food', c.food_drink); s('culture_festivals', c.celebrations_festivals);
+  s('culture_fashion', c.fashion_aesthetics); s('culture_taboos', c.taboos_social_norms);
+  s('culture_family', c.family_relationships);
+
+  const cf = data.conflicts_threats || {};
+  s('conflict_current', cf.current_conflicts); s('conflict_antagonist', cf.primary_antagonist);
+  s('conflict_looming', cf.looming_threats); s('conflict_hidden', cf.hidden_threats);
+
+  const sec = data.secrets_hidden_lore || {};
+  s('secrets_world', sec.world_secrets); s('secrets_history', sec.suppressed_history);
+  s('secrets_powers', sec.hidden_powers_conspiracies); s('secrets_prophecies', sec.prophecies);
+
+  s('world_summary', data.world_summary);
+  s('lorebook_instructions', data.lorebook_instructions);
+
+  // Rebuild dynamic entries
+  ['factions-container', 'races-container', 'religions-container', 'locations-container', 'figures-container', 'glossary-container'].forEach(id => {
+    document.getElementById(id).innerHTML = '';
+  });
+  counters = { faction: 0, race: 0, religion: 0, location: 0, figure: 0, glossary: 0 };
+
+  (fp.factions || []).forEach(f => { addFaction(); fillLastEntry('factions-container', f); });
+  (data.races_species?.races || []).forEach(r => { addRace(); fillLastEntry('races-container', r); });
+  (rel.religions || []).forEach(r => { addReligion(); fillLastEntry('religions-container', r); });
+  (data.key_locations || []).forEach(l => { addLocation(); fillLastEntry('locations-container', l); });
+  (data.notable_figures || []).forEach(f => { addFigure(); fillLastEntry('figures-container', f); });
+  (data.glossary || []).forEach(g => {
+    addGlossaryEntry();
+    const rows = document.querySelectorAll('#glossary-container .glossary-entry');
+    const row = rows[rows.length - 1];
+    row.querySelector('[data-key="term"]').value = g.term || '';
+    row.querySelector('[data-key="definition"]').value = g.definition || '';
+  });
+}
+
+function fillLastEntry(containerId, data) {
+  const cards = document.querySelectorAll(`#${containerId} .entry-card`);
+  const card = cards[cards.length - 1];
+  if (!card) return;
+  card.querySelectorAll('[data-key]').forEach(el => {
+    if (data[el.dataset.key] !== undefined) el.value = data[el.dataset.key];
+  });
+}
+
+// ── AUTO-GENERATE SUMMARY ──
+function generateSummary() {
+  const data = collectForm();
+  const wo = data.world_overview;
+  const lines = [];
+
+  if (wo.world_name) lines.push(`World: ${wo.world_name}`);
+  if (wo.genre) lines.push(`Genre: ${wo.genre}`);
+  if (wo.tone) lines.push(`Tone: ${wo.tone}`);
+  if (wo.maturity_rating) lines.push(`Rating: ${wo.maturity_rating}`);
+  if (wo.core_themes) lines.push(`Themes: ${wo.core_themes}`);
+  if (wo.elevator_pitch) lines.push(`\n${wo.elevator_pitch}`);
+  if (data.magic_power_system.exists && data.magic_power_system.how_it_works)
+    lines.push(`\nMagic: ${data.magic_power_system.how_it_works}`);
+  if (data.technology.tech_level) lines.push(`Technology: ${data.technology.tech_level}`);
+  if (data.factions_politics.overview) lines.push(`\nPolitics: ${data.factions_politics.overview}`);
+  if (data.conflicts_threats.current_conflicts) lines.push(`\nConflicts: ${data.conflicts_threats.current_conflicts}`);
+  if (data.history_timeline.current_era) lines.push(`\nCurrent Era: ${data.history_timeline.current_era}`);
+
+  document.getElementById('world_summary').value = lines.join('\n');
+  toast('Summary generated', 'success');
+}
+
+// ── EXPORT FULL ──
+function exportFull() {
+  const data = collectForm();
+  const json = JSON.stringify({ _version: '1.0', _type: 'world_lore', _created: new Date().toISOString(), ...data }, null, 2);
+  openExportModal('Full World JSON', json, `${data.world_overview.world_name || 'world'}_full.json`);
+}
+
+// ── EXPORT LOREBOOK ──
+function exportLorebook() {
+  const data = collectForm();
+  const wo = data.world_overview;
+  const entries = [];
+
+  const addEntry = (keys, content, label) => {
+    if (!content || !content.trim()) return;
+    entries.push({ uid: entries.length, key: Array.isArray(keys) ? keys : [keys], keysecondary: [], comment: label, content: content.trim(), enabled: true, insertion_order: entries.length, position: 'before_char', constant: false, selective: true });
+  };
+
+  // World overview
+  addEntry([wo.world_name, 'world', 'setting'], [
+    wo.elevator_pitch,
+    wo.core_themes && `Themes: ${wo.core_themes}`,
+    wo.tone && `Tone: ${wo.tone}`,
+    wo.scale && `Scale: ${wo.scale}`,
+  ].filter(Boolean).join('\n'), 'World Overview');
+
+  // Geography
+  if (data.geography.overview || data.geography.regions_territories)
+    addEntry(['geography', 'regions', 'map', 'land'], [data.geography.overview, data.geography.regions_territories].filter(Boolean).join('\n\n'), 'Geography');
+
+  // History
+  if (data.history_timeline.major_events || data.history_timeline.ages_eras)
+    addEntry(['history', 'timeline', 'past', 'age'], [data.history_timeline.creation_myth, data.history_timeline.ages_eras, data.history_timeline.major_events].filter(Boolean).join('\n\n'), 'History & Timeline');
+
+  // Magic
+  if (data.magic_power_system.how_it_works)
+    addEntry(['magic', 'power', 'abilities', 'spells'], [
+      `Magic System: ${data.magic_power_system.exists}`,
+      data.magic_power_system.how_it_works,
+      data.magic_power_system.types_schools && `Types: ${data.magic_power_system.types_schools}`,
+      data.magic_power_system.costs_limits && `Costs: ${data.magic_power_system.costs_limits}`,
+    ].filter(Boolean).join('\n'), 'Magic System');
+
+  // Technology
+  if (data.technology.notable_technologies || data.technology.tech_level)
+    addEntry(['technology', 'tech', 'invention'], [
+      `Tech Level: ${data.technology.tech_level}`,
+      data.technology.notable_technologies,
+    ].filter(Boolean).join('\n'), 'Technology');
+
+  // Factions
+  data.factions_politics.factions.forEach(f => {
+    addEntry([f.name, 'faction', 'organization'], [
+      `Faction: ${f.name} (${f.type})`,
+      f.description,
+      f.goals && `Goals: ${f.goals}`,
+      f.key_figures && `Key Figures: ${f.key_figures}`,
+    ].filter(Boolean).join('\n'), `Faction: ${f.name}`);
+  });
+
+  // Races
+  data.races_species.races.forEach(r => {
+    addEntry([r.name, 'race', 'species'], [
+      `Race: ${r.name}`,
+      r.overview,
+      r.physical && `Physical: ${r.physical}`,
+      r.culture && `Culture: ${r.culture}`,
+      r.abilities && `Abilities: ${r.abilities}`,
+    ].filter(Boolean).join('\n'), `Race: ${r.name}`);
+  });
+
+  // Religions
+  data.religion_mythology.religions.forEach(r => {
+    addEntry([r.name, 'religion', 'god', 'deity', 'faith'], [
+      `Religion: ${r.name}`,
+      r.beliefs,
+      r.deities && `Deities: ${r.deities}`,
+      r.practices && `Practices: ${r.practices}`,
+    ].filter(Boolean).join('\n'), `Religion: ${r.name}`);
+  });
+
+  // Locations
+  data.key_locations.forEach(l => {
+    addEntry([l.name, 'location', 'place'], [
+      `Location: ${l.name} (${l.type})`,
+      l.description,
+      l.history && `History: ${l.history}`,
+    ].filter(Boolean).join('\n'), `Location: ${l.name}`);
+  });
+
+  // Notable figures
+  data.notable_figures.forEach(f => {
+    addEntry([f.name, 'figure', 'person', 'character'], [
+      `${f.name} — ${f.role} (${f.status})`,
+      f.description,
+      f.goals && `Goals: ${f.goals}`,
+      f.impact && `Impact: ${f.impact}`,
+    ].filter(Boolean).join('\n'), `Figure: ${f.name}`);
+  });
+
+  // Conflicts
+  if (data.conflicts_threats.current_conflicts)
+    addEntry(['conflict', 'war', 'threat', 'danger'], [
+      data.conflicts_threats.current_conflicts,
+      data.conflicts_threats.primary_antagonist && `Antagonist: ${data.conflicts_threats.primary_antagonist}`,
+      data.conflicts_threats.looming_threats && `Looming: ${data.conflicts_threats.looming_threats}`,
+    ].filter(Boolean).join('\n'), 'Conflicts & Threats');
+
+  // Glossary
+  if (data.glossary.length)
+    addEntry(['glossary', 'term', 'word', 'language'], data.glossary.map(g => `${g.term}: ${g.definition}`).join('\n'), 'Glossary');
+
+  // Culture
+  if (data.culture_daily_life.languages || data.culture_daily_life.taboos_social_norms)
+    addEntry(['culture', 'custom', 'tradition', 'society'], [
+      data.culture_daily_life.languages && `Languages: ${data.culture_daily_life.languages}`,
+      data.culture_daily_life.taboos_social_norms && `Customs: ${data.culture_daily_life.taboos_social_norms}`,
+      data.culture_daily_life.celebrations_festivals && `Festivals: ${data.culture_daily_life.celebrations_festivals}`,
+    ].filter(Boolean).join('\n'), 'Culture');
+
+  const lorebook = {
+    name: wo.world_name || 'World Lorebook',
+    description: data.world_summary || wo.elevator_pitch || '',
+    scan_depth: 2,
+    token_budget: 2048,
+    recursive_scanning: false,
+    extensions: {},
+    entries,
+    _system_prompt: data.lorebook_instructions || '',
+    _raw: data,
+  };
+
+  const json = JSON.stringify(lorebook, null, 2);
+  openExportModal('Lorebook Export JSON', json, `${wo.world_name || 'world'}_lorebook.json`);
+}
+
+// ── SYSTEM COMMANDS ──
+function appendCmd(text) {
+  const ta = document.getElementById('lorebook_instructions');
+  ta.value = ta.value ? ta.value.trim() + '\n\n' + text : text;
+  toast('Instruction added', 'success');
+}
+
+// ── MODAL ──
+let currentExportFilename = 'world.json';
+function openExportModal(title, json, filename) {
+  document.getElementById('exportModalTitle').textContent = title;
+  document.getElementById('exportText').value = json;
+  currentExportFilename = filename;
+  document.getElementById('exportModal').classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function copyExport() {
+  navigator.clipboard.writeText(document.getElementById('exportText').value).then(() => toast('Copied to clipboard', 'success'));
+}
+function downloadExport() {
+  const blob = new Blob([document.getElementById('exportText').value], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = currentExportFilename;
+  a.click();
+  toast('Downloaded', 'success');
+}
+
+// ── IMPORT ──
+function importJSON() { document.getElementById('importModal').classList.add('open'); }
+function doImport() {
+  try {
+    let data = JSON.parse(document.getElementById('importText').value.trim());
+    if (data._raw) data = data._raw;
+    populateForm(data);
+    closeModal('importModal');
+    document.getElementById('importText').value = '';
+    toast('World imported', 'success');
+  } catch(e) {
+    toast('Invalid JSON: ' + e.message, 'error');
+  }
+}
+
+// ── CLEAR ──
+function clearForm() {
+  if (!confirm('Clear all fields? This cannot be undone.')) return;
+  document.querySelectorAll('input[type="text"], textarea, select').forEach(el => {
+    if (el.tagName === 'SELECT') el.selectedIndex = 0;
+    else el.value = '';
+  });
+  ['factions-container','races-container','religions-container','locations-container','figures-container','glossary-container'].forEach(id => {
+    document.getElementById(id).innerHTML = '';
+  });
+  counters = { faction: 0, race: 0, religion: 0, location: 0, figure: 0, glossary: 0 };
+  toast('Form cleared', 'success');
+}
+function newWorld() { clearForm(); }
+
+// ── TOAST ──
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  setTimeout(() => el.className = '', 2500);
+}
+
+// ── SIDEBAR ACTIVE ──
+window.addEventListener('scroll', () => {
+  const sections = document.querySelectorAll('.section');
+  const links = document.querySelectorAll('nav a');
+  let current = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 80) current = '#' + s.id; });
+  links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === current));
+});
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
