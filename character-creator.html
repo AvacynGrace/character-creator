@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Character Profile Creator</title>
+<style>
+  :root {
+    --bg: #0e0e12;
+    --surface: #1a1a24;
+    --surface2: #22222f;
+    --border: #2e2e3e;
+    --accent: #7c6af7;
+    --accent2: #c084fc;
+    --text: #e2e0f0;
+    --muted: #8888aa;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  header h1 { font-size: 16px; font-weight: 700; color: var(--accent2); flex: 1; min-width: 180px; }
+  .btn {
+    padding: 7px 14px; border-radius: 6px; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 600; transition: opacity .2s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-green { background: #166534; color: var(--green); border: 1px solid #166534; }
+  .btn-red { background: #7f1d1d; color: var(--red); border: 1px solid #7f1d1d; }
+
+  /* LAYOUT */
+  .layout { display: flex; min-height: calc(100vh - 52px); }
+
+  /* SIDEBAR */
+  nav {
+    width: 200px; flex-shrink: 0; background: var(--surface);
+    border-right: 1px solid var(--border); padding: 16px 0;
+    position: sticky; top: 52px; height: calc(100vh - 52px); overflow-y: auto;
+  }
+  nav a {
+    display: block; padding: 7px 18px; color: var(--muted); text-decoration: none;
+    font-size: 12px; font-weight: 500; border-left: 2px solid transparent; transition: all .15s;
+  }
+  nav a:hover, nav a.active { color: var(--accent2); border-left-color: var(--accent); background: rgba(124,106,247,.07); }
+  nav .nav-group { padding: 10px 18px 4px; font-size: 10px; font-weight: 700; color: var(--border); text-transform: uppercase; letter-spacing: .08em; }
+
+  /* MAIN */
+  main { flex: 1; padding: 24px; max-width: 860px; }
+
+  /* SECTION */
+  .section {
+    margin-bottom: 36px; scroll-margin-top: 70px;
+  }
+  .section-header {
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 18px;
+  }
+  .section-header h2 { font-size: 15px; font-weight: 700; color: var(--accent2); }
+  .section-icon { font-size: 16px; }
+
+  /* FIELD */
+  .field { margin-bottom: 16px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  label {
+    display: block; font-size: 12px; font-weight: 600; color: var(--muted);
+    margin-bottom: 5px; text-transform: uppercase; letter-spacing: .05em;
+  }
+  label span.req { color: var(--accent); margin-left: 3px; }
+  input[type="text"], select, textarea {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-family: inherit; font-size: 13px;
+    padding: 8px 10px; transition: border-color .15s; resize: vertical;
+  }
+  input[type="text"]:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--accent);
+  }
+  input[type="text"]::placeholder, textarea::placeholder { color: var(--border); }
+  select option { background: var(--surface2); }
+  textarea { min-height: 80px; line-height: 1.5; }
+  textarea.tall { min-height: 130px; }
+  textarea.xtall { min-height: 200px; }
+
+  /* BRAINSTORM */
+  .brainstorm-toggle {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--accent); cursor: pointer;
+    background: none; border: none; padding: 2px 0; margin-bottom: 6px; font-family: inherit;
+  }
+  .brainstorm-toggle:hover { color: var(--accent2); }
+  .brainstorm-panel {
+    display: none; background: rgba(124,106,247,.08); border: 1px solid rgba(124,106,247,.25);
+    border-radius: 6px; padding: 12px 14px; margin-bottom: 8px;
+  }
+  .brainstorm-panel.open { display: block; }
+  .brainstorm-panel p { font-size: 12px; color: var(--muted); line-height: 1.7; margin-bottom: 6px; }
+  .brainstorm-panel p:last-child { margin-bottom: 0; }
+  .brainstorm-panel strong { color: var(--accent2); }
+  .brainstorm-panel ul { padding-left: 16px; }
+  .brainstorm-panel li { font-size: 12px; color: var(--muted); line-height: 1.7; }
+
+  /* DIALOGUE */
+  .dialogue-entry { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+  .dialogue-entry label { margin-bottom: 4px; }
+  .dialogue-remove { float: right; background: none; border: none; color: var(--red); cursor: pointer; font-size: 13px; }
+
+  /* SYSTEM COMMANDS */
+  .cmd-chip {
+    display: inline-block; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 3px 8px; font-size: 11px; color: var(--muted);
+    cursor: pointer; margin: 3px; transition: all .15s;
+  }
+  .cmd-chip:hover { border-color: var(--accent); color: var(--accent2); }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 16px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none;
+  }
+  #toast.show { opacity: 1; }
+  #toast.success { border-color: var(--green); color: var(--green); }
+  #toast.error { border-color: var(--red); color: var(--red); }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; max-width: 560px; width: 90%; }
+  .modal h3 { font-size: 15px; color: var(--accent2); margin-bottom: 14px; }
+  .modal textarea { width: 100%; height: 200px; font-family: monospace; font-size: 11px; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
+
+  @media (max-width: 640px) {
+    nav { display: none; }
+    .field-row { grid-template-columns: 1fr; }
+    main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Character Profile Creator</h1>
+  <button class="btn btn-secondary" onclick="newProfile()">New</button>
+  <button class="btn btn-secondary" onclick="importJSON()">Import JSON</button>
+  <button class="btn btn-green" onclick="exportFull()">Export Full JSON</button>
+  <button class="btn btn-primary" onclick="exportPlatform()">Export for Platform</button>
+  <button class="btn btn-red" onclick="clearForm()">Clear</button>
+</header>
+
+<div class="layout">
+<nav id="sidebar">
+  <div class="nav-group">Basics</div>
+  <a href="#s-basic">Basic Information</a>
+  <a href="#s-personality">Personality</a>
+  <a href="#s-communication">Communication</a>
+  <div class="nav-group">Abilities</div>
+  <a href="#s-skills">Skills &amp; Abilities</a>
+  <a href="#s-preferences">Preferences</a>
+  <div class="nav-group">Life</div>
+  <a href="#s-living">Living Situation</a>
+  <a href="#s-appearance">Appearance</a>
+  <a href="#s-background">Background</a>
+  <div class="nav-group">Bot Setup</div>
+  <a href="#s-otherchars">Other Characters</a>
+  <a href="#s-dialogue">Sample Dialogue</a>
+  <a href="#s-abridged">Abridged Version</a>
+  <a href="#s-commands">System Commands</a>
+</nav>
+
+<main>
+
+<!-- BASIC INFORMATION -->
+<div class="section" id="s-basic">
+  <div class="section-header"><span class="section-icon">👤</span><h2>Basic Information</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-basic')">&#9881; Brainstorm: Identity</button>
+  <div class="brainstorm-panel" id="bs-basic">
+    <p><strong>Questions to spark ideas:</strong></p>
+    <ul>
+      <li>What does their name mean, and did they choose it or was it given to them?</li>
+      <li>Do they go by a nickname, title, or alias? Why?</li>
+      <li>How does their species/race affect how society treats them?</li>
+      <li>Is their occupation a calling, a survival necessity, or a cover story?</li>
+      <li>Do they align with their faction's values, or are they a reluctant member?</li>
+      <li>For non-human ages: what milestones or events mark time for their species?</li>
+    </ul>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Name <span class="req">*</span></label>
+      <input type="text" id="name" placeholder="Full name, nickname, title">
+    </div>
+    <div class="field">
+      <label>Age</label>
+      <input type="text" id="age" placeholder="Number or age + human equivalent">
+    </div>
+  </div>
+  <div class="field-row">
+    <div class="field">
+      <label>Gender</label>
+      <input type="text" id="gender" placeholder="Identity">
+    </div>
+    <div class="field">
+      <label>Secondary Gender</label>
+      <input type="text" id="secondary_gender" placeholder="Alpha, Beta, Omega, Gamma, Enigma, etc.">
+    </div>
+  </div>
+  <div class="field-row">
+    <div class="field">
+      <label>Sexuality</label>
+      <input type="text" id="sexuality" placeholder="e.g. Pansexual, Bisexual, Heterosexual...">
+    </div>
+    <div class="field">
+      <label>Species / Race</label>
+      <input type="text" id="species" placeholder="Human, werewolf, vampire, elf, mutant, robot...">
+    </div>
+  </div>
+  <div class="field">
+    <label>Occupation / Role</label>
+    <input type="text" id="occupation" placeholder="Profession, position, calling, social role">
+  </div>
+  <div class="field">
+    <label>Alignment / Affiliation</label>
+    <input type="text" id="alignment" placeholder="Faction, guild, org? Moral compass (Good/Neutral/Evil, Lawful/Chaotic)?">
+  </div>
+</div>
+
+<!-- PERSONALITY -->
+<div class="section" id="s-personality">
+  <div class="section-header"><span class="section-icon">🧠</span><h2>Personality</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-personality')">&#9881; Brainstorm: Personality</button>
+  <div class="brainstorm-panel" id="bs-personality">
+    <p><strong>Core character questions:</strong></p>
+    <ul>
+      <li>Is this character shaped more by nature or nurture? What single event changed them forever?</li>
+      <li>What do they want the world to think of them vs. who they actually are?</li>
+      <li>Are they aware of their own flaws? Do they embrace or deny them?</li>
+      <li>What's their relationship with authority — do they follow, lead, or resist?</li>
+      <li>When pushed to the edge, do they explode, shut down, or get eerily calm?</li>
+      <li>What would they sacrifice — and what would they never give up?</li>
+    </ul>
+    <p><strong>Archetype prompts:</strong> Warrior (fights for something), Sage (seeks truth), Rebel (breaks rules), Guardian (protects others), Shadow (operates in darkness), Jester (uses humor as armor), Lover (defined by connection), Hero (rises to challenges).</p>
+    <p><strong>For Internal Conflict:</strong> What two parts of themselves are at war? (e.g., loyalty vs. freedom, love vs. duty, control vs. desire)</p>
+  </div>
+
+  <div class="field">
+    <label>Archetype</label>
+    <input type="text" id="archetype" placeholder="Warrior, Sage, Rebel, Guardian, Shadow, Jester, etc.">
+  </div>
+  <div class="field">
+    <label>Core Personality Traits</label>
+    <textarea id="core_traits" class="tall" placeholder="3-5 key traits with specific descriptions of how they manifest. E.g.: Protective — positions himself between threats and those he cares about; rarely asks for help."></textarea>
+  </div>
+  <div class="field">
+    <label>Personality with {{user}}</label>
+    <textarea id="personality_with_user" class="tall" placeholder="How do they behave specifically with {{user}}? What is the history and dynamic between them?"></textarea>
+  </div>
+  <div class="field">
+    <label>Goals and Motivation</label>
+    <textarea id="goals" placeholder="What drives them? What do they want to achieve short-term and long-term?"></textarea>
+  </div>
+  <div class="field">
+    <label>Fears and Weaknesses</label>
+    <textarea id="fears" placeholder="What terrifies them? What is their vulnerability — emotional, psychological, physical?"></textarea>
+  </div>
+  <div class="field">
+    <label>Other Traits</label>
+    <textarea id="other_traits" placeholder="Quirks, habits, nervous ticks, what they do in stressful situations, comfort behaviors..."></textarea>
+  </div>
+  <div class="field">
+    <label>Internal Conflict (Optional)</label>
+    <textarea id="internal_conflict" placeholder="What contradiction is tearing them apart inside?"></textarea>
+  </div>
+  <div class="field">
+    <label>Secret</label>
+    <textarea id="secret" placeholder="What are they hiding from everyone — even those closest to them?"></textarea>
+  </div>
+</div>
+
+<!-- COMMUNICATION STYLE -->
+<div class="section" id="s-communication">
+  <div class="section-header"><span class="section-icon">💬</span><h2>Communication Style</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-comm')">&#9881; Brainstorm: Voice & Speech</button>
+  <div class="brainstorm-panel" id="bs-comm">
+    <p><strong>Finding their voice:</strong></p>
+    <ul>
+      <li>Do they say more than they mean, or less? Are they direct or evasive?</li>
+      <li>Do they use humor to deflect, or are they almost incapable of jokes?</li>
+      <li>How does stress change their speech — do they get quieter or louder?</li>
+      <li>Do they have a verbal tic, a phrase they return to, a word they overuse?</li>
+      <li>How do they talk to people they respect vs. people they don't?</li>
+      <li>Do they use pet names, formal titles, or avoid names entirely?</li>
+      <li>What language do their endearments come from, and why that language?</li>
+    </ul>
+  </div>
+
+  <div class="field">
+    <label>Voice</label>
+    <input type="text" id="voice" placeholder="Tone, pitch, accent, vocal quirks (raspy, melodic, flat, lilting...)">
+  </div>
+  <div class="field">
+    <label>Speech Style / Vocabulary</label>
+    <textarea id="speech_style" placeholder="How do they speak? (brief and rude, wise and flowery, slang, dialect). Key phrases or filler words they use frequently."></textarea>
+  </div>
+  <div class="field">
+    <label>Endearment Terms</label>
+    <textarea id="endearments" placeholder="What do they call people they care about? Include language translation if applicable. E.g.: 'little wolf' (affectionate), 'solnyshko' (Russian: little sun)"></textarea>
+  </div>
+  <div class="field">
+    <label>Relationships with Others</label>
+    <textarea id="relationships" placeholder="Brief overview: friends, mentors, enemies, rivals. How do they treat strangers vs. trusted people?"></textarea>
+  </div>
+</div>
+
+<!-- SKILLS & ABILITIES -->
+<div class="section" id="s-skills">
+  <div class="section-header"><span class="section-icon">⚔️</span><h2>Skills &amp; Abilities</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-skills')">&#9881; Brainstorm: Capabilities</button>
+  <div class="brainstorm-panel" id="bs-skills">
+    <p><strong>Building a believable skillset:</strong></p>
+    <ul>
+      <li>How did they acquire these skills — training, survival, inheritance, accident?</li>
+      <li>Is there a skill gap between what they can do and what they admit to?</li>
+      <li>What's their fighting philosophy — brutal efficiency, elegant precision, or wild improvisation?</li>
+      <li>For supernatural abilities: what does using them cost them? (exhaustion, pain, emotion, years of life?)</li>
+      <li>What's something they're embarrassingly bad at that contradicts their image?</li>
+      <li>Is there a skill they want but don't have? Something they're working toward?</li>
+    </ul>
+  </div>
+
+  <div class="field">
+    <label>Professional / Applied Skills</label>
+    <textarea id="skills_professional" placeholder="Expertise: shooting, medicine, lockpicking, survival, diplomacy, hacking, specific talents..."></textarea>
+  </div>
+  <div class="field">
+    <label>Combat Abilities (Optional)</label>
+    <textarea id="skills_combat" placeholder="Fighting style, preferred weapons, tactics, how they approach a fight..."></textarea>
+  </div>
+  <div class="field">
+    <label>Supernatural / Unique Abilities (Optional)</label>
+    <textarea id="skills_supernatural" placeholder="Magic, psionics, shifting abilities, enhanced senses, etc. Include costs/limits/triggers."></textarea>
+  </div>
+  <div class="field">
+    <label>Weaknesses / Inabilities</label>
+    <textarea id="skills_weaknesses" placeholder="What are they bad at? Physical limitations, knowledge gaps, things they flat-out cannot do..."></textarea>
+  </div>
+</div>
+
+<!-- PREFERENCES -->
+<div class="section" id="s-preferences">
+  <div class="section-header"><span class="section-icon">❤️</span><h2>Preferences</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-pref')">&#9881; Brainstorm: Likes, Dislikes & Intimacy</button>
+  <div class="brainstorm-panel" id="bs-pref">
+    <p><strong>Preference questions:</strong></p>
+    <ul>
+      <li>What small, mundane thing genuinely brings them joy that would surprise people?</li>
+      <li>Is there something they hate that used to be meaningful to them?</li>
+      <li>Do their dislikes reveal their values — or their trauma?</li>
+      <li>Are they romantically cautious or do they fall hard and fast?</li>
+      <li>What does intimacy mean to them beyond the physical — what do they crave emotionally?</li>
+      <li>Is there a contradiction between what they say they want and what they actually respond to?</li>
+    </ul>
+  </div>
+
+  <div class="field">
+    <label>Likes</label>
+    <textarea id="likes" placeholder="What brings them joy, pleasure, or comfort? Include sensory preferences, activities, people-types, environments..."></textarea>
+  </div>
+  <div class="field">
+    <label>Dislikes</label>
+    <textarea id="dislikes" placeholder="What irritates, disgusts, or repulses them? What pushes their buttons?"></textarea>
+  </div>
+  <div class="field">
+    <label>Sexual Kinks / Preferences</label>
+    <textarea id="kinks" placeholder="What turns them on intimately? Romantic and intimate behavior style, love language, physical preferences..."></textarea>
+  </div>
+</div>
+
+<!-- LIVING SITUATION -->
+<div class="section" id="s-living">
+  <div class="section-header"><span class="section-icon">🏠</span><h2>Living Situation</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-living')">&#9881; Brainstorm: Environment & Possessions</button>
+  <div class="brainstorm-panel" id="bs-living">
+    <p><strong>Space and possessions reveal character:</strong></p>
+    <ul>
+      <li>Does their living space reflect who they are, or hide it?</li>
+      <li>Is there something they own that they would die before losing?</li>
+      <li>Do they feel at home where they live, or are they always ready to leave?</li>
+      <li>What does their vehicle (or lack of one) say about their freedom or lack thereof?</li>
+      <li>Do they have anything that belonged to someone they lost?</li>
+    </ul>
+  </div>
+
+  <div class="field">
+    <label>Residence</label>
+    <textarea id="residence" placeholder="Where they live, type of dwelling, condition, location, atmosphere..."></textarea>
+  </div>
+  <div class="field">
+    <label>What They Own</label>
+    <textarea id="possessions" placeholder="Significant possessions, property, treasures. What has sentimental or practical value?"></textarea>
+  </div>
+  <div class="field">
+    <label>Vehicle</label>
+    <input type="text" id="vehicle" placeholder="Transportation method, condition, significance (or N/A)">
+  </div>
+</div>
+
+<!-- APPEARANCE -->
+<div class="section" id="s-appearance">
+  <div class="section-header"><span class="section-icon">✨</span><h2>Appearance</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-appear')">&#9881; Brainstorm: Physicality</button>
+  <div class="brainstorm-panel" id="bs-appear">
+    <p><strong>Appearance questions:</strong></p>
+    <ul>
+      <li>What's the first thing people notice about them — is that intentional?</li>
+      <li>Do their scars, tattoos, or marks have stories? Do they hide or display them?</li>
+      <li>Does their clothing tell you who they are, or who they want people to think they are?</li>
+      <li>How does their alt/shifted form differ emotionally from their base form?</li>
+      <li>What does their scent say about them — is it comforting, threatening, intoxicating?</li>
+      <li>How do they carry themselves — do they take up space or try to disappear?</li>
+    </ul>
+  </div>
+
+  <div class="field">
+    <label>Body / Physique</label>
+    <textarea id="body" placeholder="Height, body type, build, weight, distinguishing physical features, how they carry themselves..."></textarea>
+  </div>
+  <div class="field">
+    <label>Dick (if applicable)</label>
+    <input type="text" id="dick" placeholder="Size, description, notable characteristics">
+  </div>
+  <div class="field-row">
+    <div class="field">
+      <label>Hair</label>
+      <textarea id="hair" placeholder="Color, length, texture, style, grooming habits..."></textarea>
+    </div>
+    <div class="field">
+      <label>Eyes</label>
+      <textarea id="eyes" placeholder="Color, shape, expression, unique details (glow, slit pupils, heterochromia)..."></textarea>
+    </div>
+  </div>
+  <div class="field">
+    <label>Skin Tone / Features</label>
+    <textarea id="skin" placeholder="Shade, scars, tattoos, birthmarks, freckles, scales, cybernetic implants, fur markings..."></textarea>
+  </div>
+  <div class="field">
+    <label>Clothing Style</label>
+    <input type="text" id="clothing_style" placeholder="General aesthetic: practical, elegant, casual, military, post-apocalyptic, etc.">
+  </div>
+  <div class="field">
+    <label>Typical Outfit</label>
+    <textarea id="outfit" placeholder="Detailed description of current/usual clothing, condition, fit..."></textarea>
+  </div>
+  <div class="field">
+    <label>Accessories and Equipment</label>
+    <textarea id="accessories" placeholder="What they carry: weapons, tools, jewelry, gadgets. Sentimental value of specific items?"></textarea>
+  </div>
+  <div class="field">
+    <label>Wolf / Alt Form (if applicable)</label>
+    <textarea id="alt_form" placeholder="Description of shifted or alternate form — size, coloring, markings, demeanor change..."></textarea>
+  </div>
+  <div class="field-row">
+    <div class="field">
+      <label>Scent</label>
+      <input type="text" id="scent" placeholder="What do they smell like? Signature scent, what it evokes...">
+    </div>
+    <div class="field">
+      <label>Sound (Optional)</label>
+      <input type="text" id="sound" placeholder="What sounds are heard when they approach? Footsteps, hum, creak...">
+    </div>
+  </div>
+</div>
+
+<!-- BACKGROUND -->
+<div class="section" id="s-background">
+  <div class="section-header"><span class="section-icon">📖</span><h2>Background</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-bg')">&#9881; Brainstorm: History</button>
+  <div class="brainstorm-panel" id="bs-bg">
+    <p><strong>Backstory questions:</strong></p>
+    <ul>
+      <li>What is the defining wound of their past — the thing they've never fully healed from?</li>
+      <li>Was there a moment they made a choice they still regret? One they're proud of?</li>
+      <li>Who raised them and how did that shape (or damage) them?</li>
+      <li>What did they have to become to survive? Did it cost them something?</li>
+      <li>Where are they right now, emotionally and circumstantially, when the story begins?</li>
+      <li>What do they believe the future holds — do they have hope, dread, or numbness?</li>
+    </ul>
+  </div>
+
+  <div class="field">
+    <label>Brief Biography</label>
+    <textarea id="biography" class="xtall" placeholder="Key life events that shaped their personality and skills. Formative moments, losses, turning points..."></textarea>
+  </div>
+  <div class="field">
+    <label>Current Situation</label>
+    <textarea id="current_situation" class="tall" placeholder="Circumstances at the start of the story/roleplay. Where are they, what's going on, what are they trying to do?"></textarea>
+  </div>
+</div>
+
+<!-- OTHER CHARACTERS -->
+<div class="section" id="s-otherchars">
+  <div class="section-header"><span class="section-icon">👥</span><h2>Other Characters</h2></div>
+  <p style="color:var(--muted);font-size:12px;margin-bottom:14px;">Fill this out if this is a multi-character bot.</p>
+
+  <div class="field">
+    <label>Shared Traits</label>
+    <textarea id="shared_traits" placeholder="Common characteristics, tone, or rules that apply across all characters in this bot..."></textarea>
+  </div>
+  <div class="field">
+    <label>Character Roster</label>
+    <textarea id="character_roster" class="tall" placeholder="List and brief description of each character included. One per line or structured as you prefer."></textarea>
+  </div>
+  <div class="field">
+    <label>NPCs</label>
+    <textarea id="npcs" class="tall" placeholder="NPC {relationship to character &/or user / title (name / age / sex / basic description / important traits / critical info)}&#10;&#10;E.g.: Ally {Pack Beta | Marcus / 34 / Male / broad, scarred, loyal / speaks in short sentences / knows the main character's secret}"></textarea>
+  </div>
+</div>
+
+<!-- SAMPLE DIALOGUE -->
+<div class="section" id="s-dialogue">
+  <div class="section-header"><span class="section-icon">💭</span><h2>Sample Dialogue</h2></div>
+
+  <button class="brainstorm-toggle" onclick="toggleBrainstorm('bs-dial')">&#9881; Brainstorm: Writing Their Voice</button>
+  <div class="brainstorm-panel" id="bs-dial">
+    <p><strong>Tips for writing good example dialogue:</strong></p>
+    <ul>
+      <li>Write at least one exchange that shows how they handle tension or conflict.</li>
+      <li>Include one that shows warmth or vulnerability — not just their surface persona.</li>
+      <li>Show how they react to being challenged, questioned, or pushed.</li>
+      <li>Use their signature phrases, speech patterns, and vocabulary naturally.</li>
+      <li>Format: <em>{{user}}: [message]</em> followed by <em>[Character name]: [response]</em></li>
+    </ul>
+  </div>
+
+  <div id="dialogue-container"></div>
+  <button class="btn btn-secondary" onclick="addDialogue()" style="margin-top:6px;">+ Add Exchange</button>
+</div>
+
+<!-- ABRIDGED VERSION -->
+<div class="section" id="s-abridged">
+  <div class="section-header"><span class="section-icon">📋</span><h2>Abridged Version</h2></div>
+  <p style="color:var(--muted);font-size:12px;margin-bottom:10px;">A condensed character summary for quick reference or token-limited scenarios.</p>
+
+  <button class="btn btn-secondary" onclick="generateAbridged()" style="margin-bottom:10px;">Auto-Generate from Fields</button>
+  <div class="field">
+    <textarea id="abridged" class="xtall" placeholder="Write or auto-generate a condensed summary. Typically 150-400 words covering: name, species, personality core, key traits, appearance highlights, and dynamic with user."></textarea>
+  </div>
+</div>
+
+<!-- VITAL SYSTEM COMMANDS -->
+<div class="section" id="s-commands">
+  <div class="section-header"><span class="section-icon">⚙️</span><h2>Vital System Commands</h2></div>
+  <p style="color:var(--muted);font-size:12px;margin-bottom:10px;">Instructions that govern how the AI behaves. These go into the system prompt / character instructions on most platforms.</p>
+
+  <div style="margin-bottom:10px;">
+    <p style="color:var(--muted);font-size:11px;margin-bottom:6px;">Quick-insert templates (click to append):</p>
+    <span class="cmd-chip" onclick="appendCmd('Always stay in character as [Name]. Never break character, acknowledge being an AI, or refer to yourself as a language model.')">Stay in character</span>
+    <span class="cmd-chip" onclick="appendCmd('Write responses in third-person limited perspective, focusing on [Name]\'s actions and inner thoughts.')">Third person</span>
+    <span class="cmd-chip" onclick="appendCmd('Write responses in first-person perspective as [Name].')">First person</span>
+    <span class="cmd-chip" onclick="appendCmd('Keep responses concise (2-4 paragraphs). Match the length and energy of {{user}}\'s messages.')">Response length</span>
+    <span class="cmd-chip" onclick="appendCmd('This is an 18+ roleplay. Explicit adult content is permitted and encouraged when appropriate to the scene.')">18+ content</span>
+    <span class="cmd-chip" onclick="appendCmd('Do not rush romantic or intimate progression. Let tension build naturally based on {{user}}\'s cues.')">Slow burn</span>
+    <span class="cmd-chip" onclick="appendCmd('Occasionally initiate actions, advance the scene, or introduce minor plot elements to keep the story moving.')">Story momentum</span>
+    <span class="cmd-chip" onclick="appendCmd('[Name] will never harm, manipulate, or act against {{user}}\'s fundamental wellbeing, even in dark roleplay scenarios.')">Safety floor</span>
+    <span class="cmd-chip" onclick="appendCmd('Use italics for actions and internal thoughts. Use regular text for spoken dialogue. Format: *action* "dialogue"')">Formatting style</span>
+    <span class="cmd-chip" onclick="appendCmd('If {{user}} asks to pause roleplay with OOC: or (( )), respond helpfully out of character, then offer to resume.')">OOC handling</span>
+  </div>
+
+  <div class="field">
+    <textarea id="system_commands" class="xtall" placeholder="Enter your system commands here. These control character behavior, writing style, content rules, and roleplay mechanics.&#10;&#10;Example:&#10;Always stay in character as [Name]. Use *italics* for actions and inner thoughts. Write in third person. Adult content is permitted. Never reference being an AI."></textarea>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <h3>Import JSON</h3>
+    <textarea id="importText" placeholder="Paste your JSON here..."></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('importModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doImport()">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <h3 id="exportModalTitle">Export JSON</h3>
+    <textarea id="exportText" readonly></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('exportModal')">Close</button>
+      <button class="btn btn-primary" onclick="copyExport()">Copy to Clipboard</button>
+      <button class="btn btn-green" onclick="downloadExport()">Download File</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── BRAINSTORM TOGGLE ──
+function toggleBrainstorm(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+// ── DIALOGUE ──
+let dialogueCount = 0;
+function addDialogue() {
+  dialogueCount++;
+  const container = document.getElementById('dialogue-container');
+  const div = document.createElement('div');
+  div.className = 'dialogue-entry';
+  div.id = `dial-${dialogueCount}`;
+  div.innerHTML = `
+    <button class="dialogue-remove" onclick="removeDialogue('dial-${dialogueCount}')">✕ Remove</button>
+    <label>Exchange ${dialogueCount}</label>
+    <textarea style="min-height:100px" placeholder='{{user}}: [message]&#10;[Character name]: [response with actions and dialogue]'></textarea>
+  `;
+  container.appendChild(div);
+}
+function removeDialogue(id) {
+  document.getElementById(id)?.remove();
+}
+
+// ── SYSTEM COMMANDS ──
+function appendCmd(text) {
+  const ta = document.getElementById('system_commands');
+  ta.value = ta.value ? ta.value.trim() + '\n\n' + text : text;
+  toast('Command added', 'success');
+}
+
+// ── COLLECT FORM DATA ──
+function collectForm() {
+  const g = id => document.getElementById(id)?.value.trim() || '';
+
+  const dialogues = [];
+  document.querySelectorAll('#dialogue-container .dialogue-entry textarea').forEach(ta => {
+    if (ta.value.trim()) dialogues.push(ta.value.trim());
+  });
+
+  return {
+    basic_information: {
+      name: g('name'),
+      age: g('age'),
+      gender: g('gender'),
+      secondary_gender: g('secondary_gender'),
+      sexuality: g('sexuality'),
+      species_race: g('species'),
+      occupation_role: g('occupation'),
+      alignment_affiliation: g('alignment'),
+    },
+    personality: {
+      archetype: g('archetype'),
+      core_personality_traits: g('core_traits'),
+      personality_with_user: g('personality_with_user'),
+      goals_and_motivation: g('goals'),
+      fears_and_weaknesses: g('fears'),
+      other_traits: g('other_traits'),
+      internal_conflict: g('internal_conflict'),
+      secret: g('secret'),
+    },
+    communication_style: {
+      voice: g('voice'),
+      speech_style_vocabulary: g('speech_style'),
+      endearment_terms: g('endearments'),
+      relationships_with_others: g('relationships'),
+    },
+    skills_and_abilities: {
+      professional_applied_skills: g('skills_professional'),
+      combat_abilities: g('skills_combat'),
+      supernatural_unique_abilities: g('skills_supernatural'),
+      weaknesses_inabilities: g('skills_weaknesses'),
+    },
+    preferences: {
+      likes: g('likes'),
+      dislikes: g('dislikes'),
+      sexual_kinks_preferences: g('kinks'),
+    },
+    living_situation: {
+      residence: g('residence'),
+      possessions: g('possessions'),
+      vehicle: g('vehicle'),
+    },
+    appearance: {
+      body_physique: g('body'),
+      dick: g('dick'),
+      hair: g('hair'),
+      eyes: g('eyes'),
+      skin_tone_features: g('skin'),
+      clothing_style: g('clothing_style'),
+      typical_outfit: g('outfit'),
+      accessories_equipment: g('accessories'),
+      alt_form: g('alt_form'),
+      scent: g('scent'),
+      sound: g('sound'),
+    },
+    background: {
+      biography: g('biography'),
+      current_situation: g('current_situation'),
+    },
+    other_characters: {
+      shared_traits: g('shared_traits'),
+      character_roster: g('character_roster'),
+      npcs: g('npcs'),
+    },
+    sample_dialogue: dialogues,
+    abridged_version: g('abridged'),
+    vital_system_commands: g('system_commands'),
+  };
+}
+
+// ── POPULATE FORM ──
+function populateForm(data) {
+  const s = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val; };
+  const b = data.basic_information || {};
+  s('name', b.name); s('age', b.age); s('gender', b.gender);
+  s('secondary_gender', b.secondary_gender); s('sexuality', b.sexuality);
+  s('species', b.species_race); s('occupation', b.occupation_role);
+  s('alignment', b.alignment_affiliation);
+
+  const p = data.personality || {};
+  s('archetype', p.archetype); s('core_traits', p.core_personality_traits);
+  s('personality_with_user', p.personality_with_user); s('goals', p.goals_and_motivation);
+  s('fears', p.fears_and_weaknesses); s('other_traits', p.other_traits);
+  s('internal_conflict', p.internal_conflict); s('secret', p.secret);
+
+  const c = data.communication_style || {};
+  s('voice', c.voice); s('speech_style', c.speech_style_vocabulary);
+  s('endearments', c.endearment_terms); s('relationships', c.relationships_with_others);
+
+  const sk = data.skills_and_abilities || {};
+  s('skills_professional', sk.professional_applied_skills);
+  s('skills_combat', sk.combat_abilities);
+  s('skills_supernatural', sk.supernatural_unique_abilities);
+  s('skills_weaknesses', sk.weaknesses_inabilities);
+
+  const pr = data.preferences || {};
+  s('likes', pr.likes); s('dislikes', pr.dislikes); s('kinks', pr.sexual_kinks_preferences);
+
+  const l = data.living_situation || {};
+  s('residence', l.residence); s('possessions', l.possessions); s('vehicle', l.vehicle);
+
+  const ap = data.appearance || {};
+  s('body', ap.body_physique); s('dick', ap.dick); s('hair', ap.hair);
+  s('eyes', ap.eyes); s('skin', ap.skin_tone_features);
+  s('clothing_style', ap.clothing_style); s('outfit', ap.typical_outfit);
+  s('accessories', ap.accessories_equipment); s('alt_form', ap.alt_form);
+  s('scent', ap.scent); s('sound', ap.sound);
+
+  const bg = data.background || {};
+  s('biography', bg.biography); s('current_situation', bg.current_situation);
+
+  const oc = data.other_characters || {};
+  s('shared_traits', oc.shared_traits); s('character_roster', oc.character_roster); s('npcs', oc.npcs);
+
+  document.getElementById('dialogue-container').innerHTML = '';
+  dialogueCount = 0;
+  (data.sample_dialogue || []).forEach(d => {
+    addDialogue();
+    const textareas = document.querySelectorAll('#dialogue-container .dialogue-entry textarea');
+    textareas[textareas.length - 1].value = d;
+  });
+
+  s('abridged', data.abridged_version);
+  s('system_commands', data.vital_system_commands);
+}
+
+// ── AUTO-GENERATE ABRIDGED ──
+function generateAbridged() {
+  const data = collectForm();
+  const b = data.basic_information;
+  const p = data.personality;
+  const ap = data.appearance;
+
+  let lines = [];
+  if (b.name) lines.push(`Name: ${b.name}`);
+  if (b.age || b.species_race) lines.push([b.age && `Age: ${b.age}`, b.species_race && `Species: ${b.species_race}`].filter(Boolean).join(' | '));
+  if (b.gender) lines.push(`Gender: ${b.gender}${b.secondary_gender ? ` (${b.secondary_gender})` : ''}`);
+  if (b.sexuality) lines.push(`Sexuality: ${b.sexuality}`);
+  if (b.occupation_role) lines.push(`Role: ${b.occupation_role}`);
+  if (b.alignment_affiliation) lines.push(`Alignment: ${b.alignment_affiliation}`);
+  if (p.archetype) lines.push(`Archetype: ${p.archetype}`);
+  if (p.core_personality_traits) lines.push(`\nPersonality: ${p.core_personality_traits}`);
+  if (p.goals_and_motivation) lines.push(`\nMotivation: ${p.goals_and_motivation}`);
+  if (p.fears_and_weaknesses) lines.push(`Fears: ${p.fears_and_weaknesses}`);
+  if (ap.body_physique) lines.push(`\nPhysique: ${ap.body_physique}`);
+  if (ap.hair) lines.push(`Hair: ${ap.hair}`);
+  if (ap.eyes) lines.push(`Eyes: ${ap.eyes}`);
+  if (data.background.current_situation) lines.push(`\nCurrent Situation: ${data.background.current_situation}`);
+
+  document.getElementById('abridged').value = lines.join('\n');
+  toast('Abridged version generated', 'success');
+}
+
+// ── EXPORT FULL JSON ──
+function exportFull() {
+  const data = collectForm();
+  const json = JSON.stringify({ _version: '1.0', _created: new Date().toISOString(), ...data }, null, 2);
+  openExportModal('Full Character JSON', json, `${data.basic_information.name || 'character'}_full.json`);
+}
+
+// ── EXPORT PLATFORM JSON ──
+function exportPlatform() {
+  const data = collectForm();
+  const b = data.basic_information;
+  const p = data.personality;
+  const bg = data.background;
+
+  // Build description — compile all profile sections into text
+  const sections = [];
+  const add = (label, val) => { if (val) sections.push(`[${label}]\n${val}`); };
+
+  add('Basic Information', [
+    b.name && `Name: ${b.name}`,
+    b.age && `Age: ${b.age}`,
+    b.gender && `Gender: ${b.gender}`,
+    b.secondary_gender && `Secondary Gender: ${b.secondary_gender}`,
+    b.sexuality && `Sexuality: ${b.sexuality}`,
+    b.species_race && `Species/Race: ${b.species_race}`,
+    b.occupation_role && `Occupation: ${b.occupation_role}`,
+    b.alignment_affiliation && `Alignment: ${b.alignment_affiliation}`,
+  ].filter(Boolean).join('\n'));
+
+  add('Personality', [
+    p.archetype && `Archetype: ${p.archetype}`,
+    p.core_personality_traits && `Core Traits: ${p.core_personality_traits}`,
+    p.personality_with_user && `With User: ${p.personality_with_user}`,
+    p.goals_and_motivation && `Goals: ${p.goals_and_motivation}`,
+    p.fears_and_weaknesses && `Fears/Weaknesses: ${p.fears_and_weaknesses}`,
+    p.other_traits && `Other Traits: ${p.other_traits}`,
+    p.internal_conflict && `Internal Conflict: ${p.internal_conflict}`,
+    p.secret && `Secret: ${p.secret}`,
+  ].filter(Boolean).join('\n'));
+
+  const cm = data.communication_style;
+  add('Communication Style', [
+    cm.voice && `Voice: ${cm.voice}`,
+    cm.speech_style_vocabulary && `Speech: ${cm.speech_style_vocabulary}`,
+    cm.endearment_terms && `Endearments: ${cm.endearment_terms}`,
+  ].filter(Boolean).join('\n'));
+
+  const sk = data.skills_and_abilities;
+  add('Skills & Abilities', [
+    sk.professional_applied_skills && `Skills: ${sk.professional_applied_skills}`,
+    sk.combat_abilities && `Combat: ${sk.combat_abilities}`,
+    sk.supernatural_unique_abilities && `Supernatural: ${sk.supernatural_unique_abilities}`,
+    sk.weaknesses_inabilities && `Weaknesses: ${sk.weaknesses_inabilities}`,
+  ].filter(Boolean).join('\n'));
+
+  const pr = data.preferences;
+  add('Preferences', [
+    pr.likes && `Likes: ${pr.likes}`,
+    pr.dislikes && `Dislikes: ${pr.dislikes}`,
+    pr.sexual_kinks_preferences && `Intimate Preferences: ${pr.sexual_kinks_preferences}`,
+  ].filter(Boolean).join('\n'));
+
+  const ap = data.appearance;
+  add('Appearance', [
+    ap.body_physique && `Body: ${ap.body_physique}`,
+    ap.dick && `Dick: ${ap.dick}`,
+    ap.hair && `Hair: ${ap.hair}`,
+    ap.eyes && `Eyes: ${ap.eyes}`,
+    ap.skin_tone_features && `Skin/Features: ${ap.skin_tone_features}`,
+    ap.clothing_style && `Style: ${ap.clothing_style}`,
+    ap.typical_outfit && `Outfit: ${ap.typical_outfit}`,
+    ap.accessories_equipment && `Accessories: ${ap.accessories_equipment}`,
+    ap.alt_form && `Alt Form: ${ap.alt_form}`,
+    ap.scent && `Scent: ${ap.scent}`,
+    ap.sound && `Sound: ${ap.sound}`,
+  ].filter(Boolean).join('\n'));
+
+  add('Background', [
+    bg.biography && `Biography: ${bg.biography}`,
+    bg.current_situation && `Current Situation: ${bg.current_situation}`,
+  ].filter(Boolean).join('\n'));
+
+  const oc = data.other_characters;
+  if (oc.shared_traits || oc.character_roster || oc.npcs) {
+    add('Other Characters', [
+      oc.shared_traits && `Shared Traits: ${oc.shared_traits}`,
+      oc.character_roster && `Roster:\n${oc.character_roster}`,
+      oc.npcs && `NPCs:\n${oc.npcs}`,
+    ].filter(Boolean).join('\n'));
+  }
+
+  const mesExample = data.sample_dialogue.map((d, i) => `<START>\n${d}`).join('\n\n');
+
+  const platform = {
+    name: b.name || 'Character',
+    description: sections.join('\n\n'),
+    personality: [p.archetype, p.core_personality_traits].filter(Boolean).join('\n'),
+    scenario: bg.current_situation || '',
+    first_mes: data.sample_dialogue[0] || '',
+    mes_example: mesExample,
+    system_prompt: data.vital_system_commands || '',
+    post_history_instructions: '',
+    creator_notes: data.abridged_version || '',
+    tags: [b.species_race, b.gender, b.archetype].filter(Boolean),
+    character_version: '1.0',
+    alternate_greetings: data.sample_dialogue.slice(1),
+    _raw: data,
+  };
+
+  const json = JSON.stringify(platform, null, 2);
+  openExportModal('Platform Export JSON', json, `${b.name || 'character'}_platform.json`);
+}
+
+// ── MODAL HELPERS ──
+let currentExportFilename = 'character.json';
+function openExportModal(title, json, filename) {
+  document.getElementById('exportModalTitle').textContent = title;
+  document.getElementById('exportText').value = json;
+  currentExportFilename = filename;
+  document.getElementById('exportModal').classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function copyExport() {
+  navigator.clipboard.writeText(document.getElementById('exportText').value).then(() => toast('Copied to clipboard', 'success'));
+}
+function downloadExport() {
+  const blob = new Blob([document.getElementById('exportText').value], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = currentExportFilename;
+  a.click();
+  toast('Downloaded', 'success');
+}
+
+// ── IMPORT ──
+function importJSON() { document.getElementById('importModal').classList.add('open'); }
+function doImport() {
+  try {
+    const raw = document.getElementById('importText').value.trim();
+    let data = JSON.parse(raw);
+    // Support both full and platform formats
+    if (data._raw) data = data._raw;
+    populateForm(data);
+    closeModal('importModal');
+    document.getElementById('importText').value = '';
+    toast('Profile imported', 'success');
+  } catch(e) {
+    toast('Invalid JSON: ' + e.message, 'error');
+  }
+}
+
+// ── CLEAR / NEW ──
+function clearForm() {
+  if (!confirm('Clear all fields? This cannot be undone.')) return;
+  document.querySelectorAll('input[type="text"], textarea').forEach(el => el.value = '');
+  document.getElementById('dialogue-container').innerHTML = '';
+  dialogueCount = 0;
+  toast('Form cleared', 'success');
+}
+function newProfile() { clearForm(); }
+
+// ── TOAST ──
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  setTimeout(() => el.className = '', 2500);
+}
+
+// ── SIDEBAR ACTIVE STATE ──
+window.addEventListener('scroll', () => {
+  const sections = document.querySelectorAll('.section');
+  const links = document.querySelectorAll('nav a');
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 80) current = '#' + s.id;
+  });
+  links.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === current);
+  });
+});
+
+// Close modals on backdrop click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+// Init dialogue with 3 blank entries
+addDialogue(); addDialogue(); addDialogue();
+</script>
+</body>
+</html>
